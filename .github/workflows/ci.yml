@@ -63,11 +63,11 @@ jobs:
         run: rm -rf package-lock.json && npm i -g @railway/cli
 
       - name: Deploy UI
-        run: railway redeploy --service app --yes
+        run: railway redeploy --service no-ocr-ui --yes
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }} 
 
       - name: Deploy API 
-        run: railway redeploy --service api --yes
+        run: railway redeploy --service no-ocr-api --yes
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}           

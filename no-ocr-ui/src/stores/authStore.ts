@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { AuthState } from '../types/auth';
-import { supabase } from '../config/supabase';
+import { supabase } from '../lib/supabase';
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,

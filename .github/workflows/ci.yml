@@ -31,14 +31,23 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
 
-      - name: Build and push docker image
+      - name: Build and push docker image UI
         uses: docker/build-push-action@v6
         with:
           context: no-ocr-ui
           push: true
-          tags: https://ghcr.io/kyryl-opens-ml/no-ocr-ui:latest
+          tags: ghcr.io/kyryl-opens-ml/no-ocr-ui:latest
           cache-from: type=registry,ref=ghcr.io/kyryl-opens-ml/no-ocr-ui:buildcache
           cache-to: type=registry,ref=ghcr.io/kyryl-opens-ml/no-ocr-ui:buildcache,mode=max
+
+      - name: Build and push docker image API
+        uses: docker/build-push-action@v6
+        with:
+          context: no-ocr-api
+          push: true
+          tags: ghcr.io/kyryl-opens-ml/no-ocr-api:latest
+          cache-from: type=registry,ref=ghcr.io/kyryl-opens-ml/no-ocr-api:buildcache
+          cache-to: type=registry,ref=ghcr.io/kyryl-opens-ml/no-ocr-api:buildcache,mode=max
 
   deploy:
     runs-on: ubuntu-latest
@@ -50,7 +59,12 @@ jobs:
       - name: Install Railway
         run: rm -rf package-lock.json && npm i -g @railway/cli
 
-      - name: Deploy
+      - name: Deploy UI
         run: railway redeploy --service app --yes
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }} 
+
+      - name: Deploy API 
+        run: railway redeploy --service api --yes
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}           

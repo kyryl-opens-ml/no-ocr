@@ -16,16 +16,16 @@ export default function Navbar() {
               to="/" 
               className="flex items-center text-xl font-semibold text-gray-900"
             >
-              PDF Search
+              NoOCR
             </Link>
             
             <div className="flex space-x-4">
               {user && (
                 <>
                   <NavLink 
-                    to="/collections" 
-                    icon={<Library className="w-5 h-5 mr-2" />}
-                    label="Collections"
+                    to="/search" 
+                    icon={<FileSearch className="w-5 h-5 mr-2" />}
+                    label="AI Search"
                   />
                   <NavLink 
                     to="/create-collection" 
@@ -33,9 +33,9 @@ export default function Navbar() {
                     label="Create Collection"
                   />
                   <NavLink 
-                    to="/search" 
-                    icon={<FileSearch className="w-5 h-5 mr-2" />}
-                    label="AI Search"
+                    to="/collections" 
+                    icon={<Library className="w-5 h-5 mr-2" />}
+                    label="Collections"
                   />
                 </>
               )}

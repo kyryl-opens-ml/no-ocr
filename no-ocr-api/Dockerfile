@@ -19,4 +19,4 @@ RUN pip install -r requirements.txt
 COPY . .
 ENV PYTHONPATH /app/
 
-CMD streamlit run --server.port 8000 --server.address 0.0.0.0 --browser.gatherUsageStats false ai_search_demo/ui.py
+CMD fastapi run --host 0.0.0.0 --port 8000 --workers 1 api.py

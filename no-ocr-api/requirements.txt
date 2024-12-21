@@ -5,3 +5,4 @@ pypdf==5.0.1
 streamlit==1.40.1
 pydantic-settings==2.6.1
 openai==1.55.3
+fastapi==0.115.6

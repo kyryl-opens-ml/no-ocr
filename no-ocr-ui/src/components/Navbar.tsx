@@ -16,7 +16,7 @@ export default function Navbar() {
               to="/" 
               className="flex items-center text-xl font-semibold text-gray-900"
             >
-              PDF Search
+              NoOCR
             </Link>
             
             <div className="flex space-x-4">

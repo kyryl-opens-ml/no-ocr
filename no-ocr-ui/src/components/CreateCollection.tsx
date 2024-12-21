@@ -6,6 +6,7 @@ export default function CreateCollection() {
   const [files, setFiles] = useState<FileList | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [apiMessage, setApiMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,11 +26,22 @@ export default function CreateCollection() {
     }, 500);
 
     try {
-      // TODO: Implement your API call here
-      // const formData = new FormData();
-      // formData.append('name', collectionName);
-      // Array.from(files).forEach(file => formData.append('pdfs', file));
-      // await uploadCollection(formData);
+      const formData = new FormData();
+      formData.append('collection_name', collectionName);
+      Array.from(files).forEach(file => formData.append('files', file));
+
+      const response = await fetch(`http://0.0.0.0:8000/create_collection`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const result = await response.json();
+      console.log('Upload successful:', result);
+      setApiMessage(`Upload successful: ${JSON.stringify(result)}`);
 
       setUploadProgress(100);
       setTimeout(() => {
@@ -40,6 +52,7 @@ export default function CreateCollection() {
       }, 500);
     } catch (error) {
       console.error('Upload failed:', error);
+      setApiMessage(`Upload failed: ${error.message}`);
       setIsUploading(false);
       setUploadProgress(0);
     }
@@ -123,6 +136,12 @@ export default function CreateCollection() {
           )}
         </button>
       </form>
+
+      {apiMessage && (
+        <div className="mt-4 p-4 bg-gray-100 rounded-md">
+          <p className="text-sm text-gray-700">{apiMessage}</p>
+        </div>
+      )}
     </div>
   );
 }

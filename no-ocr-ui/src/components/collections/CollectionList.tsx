@@ -3,7 +3,6 @@ import { Collection } from '../../types/collection';
 import { CollectionCard } from './CollectionCard';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
 import { EmptyState } from '../shared/EmptyState';
-import { supabase } from '../../lib/supabase';
 
 export function CollectionList() {
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -12,13 +11,10 @@ export function CollectionList() {
   useEffect(() => {
     async function fetchCollections() {
       try {
-        const { data, error } = await supabase
-          .from('collections')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setCollections(data || []);
+        const response = await fetch('http://0.0.0.0:8000/get_collections');
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+        setCollections(data.collections || []);
       } catch (error) {
         console.error('Error fetching collections:', error);
       } finally {
@@ -45,7 +41,7 @@ export function CollectionList() {
   return (
     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {collections.map((collection) => (
-        <CollectionCard key={collection.id} collection={collection} />
+        <CollectionCard key={collection.name} collection={collection} />
       ))}
     </div>
   );

@@ -1,8 +1,8 @@
 export interface Collection {
-  id: string;
   name: string;
-  documentCount: number;
-  createdAt: string;
+  status: string;
+  number_of_PDFs: number;
+  files: string[];
 }
 
 export interface SearchResult {

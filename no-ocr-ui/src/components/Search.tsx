@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+/// Start of Selection
+import React, { useState, useEffect } from 'react';
 import { Search as SearchIcon } from 'lucide-react';
+import { Collection } from '../types/collection';
 
 export default function Search() {
   const [selectedCollection, setSelectedCollection] = useState('');
@@ -7,11 +9,22 @@ export default function Search() {
   const [results, setResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Mock collections - replace with actual data
-  const collections = [
-    { id: '1', name: 'Research Papers' },
-    { id: '2', name: 'Technical Documentation' },
-  ];
+  const [collections, setCollections] = useState<Collection[]>([]);
+  
+  useEffect(() => {
+    async function fetchCollections() {
+      try {
+        const response = await fetch('http://0.0.0.0:8000/get_collections');
+        if (!response.ok) throw new Error('Network response was not ok');
+        const data = await response.json();
+        setCollections(data.collections || []);
+      } catch (error) {
+        console.error('Error fetching collections:', error);
+      }
+    }
+
+    fetchCollections();
+  }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,24 +32,23 @@ export default function Search() {
 
     setIsSearching(true);
     try {
-      // TODO: Implement your search API call here
-      // const response = await searchPDFs(selectedCollection, searchQuery);
-      // setResults(response.results);
-      
-      // Mock results
-      setTimeout(() => {
-        setResults([
-          {
-            documentName: 'example.pdf',
-            excerpt: 'Relevant text excerpt...',
-            relevanceScore: 0.95,
-            pageNumber: 1
-          }
-        ]);
-        setIsSearching(false);
-      }, 1000);
+      const response = await fetch('http://0.0.0.0:8000/search', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+        },
+        body: new URLSearchParams({
+          user_query: searchQuery,
+          collection_name: selectedCollection,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Network response was not ok');
+      const data = await response.json();
+      setResults(data.search_results || []);
     } catch (error) {
       console.error('Search failed:', error);
+    } finally {
       setIsSearching(false);
     }
   };
@@ -96,11 +108,17 @@ export default function Search() {
                 key={index}
                 className="bg-white p-4 rounded-lg shadow-sm border border-gray-200"
               >
-                <h3 className="font-medium text-gray-900">{result.documentName}</h3>
-                <p className="mt-1 text-sm text-gray-600">Page {result.pageNumber}</p>
-                <p className="mt-2 text-gray-700">{result.excerpt}</p>
+                <h3 className="font-medium text-gray-900">
+                  PDF: {result.pdf_name}
+                </h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  Page {result.pdf_page}
+                </p>
+                <p className="mt-2 text-gray-700">
+                  {result.llm_interpretation}
+                </p>
                 <div className="mt-2 text-sm text-gray-500">
-                  Relevance: {(result.relevanceScore * 100).toFixed(1)}%
+                  Relevance: {(result.score * 100).toFixed(1)}%
                 </div>
               </div>
             ))}

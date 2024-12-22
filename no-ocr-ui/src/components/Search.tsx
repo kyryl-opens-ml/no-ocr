@@ -118,7 +118,14 @@ export default function Search() {
                   {result.llm_interpretation}
                 </p>
                 <div className="mt-2 text-sm text-gray-500">
-                  Relevance: {(result.score * 100).toFixed(1)}%
+                  Score: {result.score.toFixed(2)}
+                </div>
+                <div className="mt-2">
+                  <img
+                    src={`data:image/jpeg;base64,${result.image_base64}`}
+                    alt={`Page ${result.pdf_page} of ${result.pdf_name}`}
+                    className="w-full h-auto rounded-md max-w-xs"
+                  />
                 </div>
               </div>
             ))}

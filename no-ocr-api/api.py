@@ -304,31 +304,36 @@ def ai_search(
     if not search_results:
         return {"message": "No results found."}
 
-    # dataset_path = os.path.join(settings.STORAGE_DIR, collection_name, settings.HF_DATASET_DIRNAME)
-    # if not os.path.exists(dataset_path):
-    #     raise HTTPException(status_code=404, detail="Dataset for this collection not found.")
+    dataset_path = os.path.join(settings.STORAGE_DIR, collection_name, settings.HF_DATASET_DIRNAME)
+    if not os.path.exists(dataset_path):
+        raise HTTPException(status_code=404, detail="Dataset for this collection not found.")
 
-    # dataset = load_from_disk(dataset_path)
+    dataset = load_from_disk(dataset_path)
     search_results_data = []
     for result in search_results.points:
         payload = result.payload
         print(payload)
         score = result.score
-        # image_data = dataset[payload['index']]['image']
-        # pdf_name = dataset[payload['index']]['pdf_name']
-        # pdf_page = dataset[payload['index']]['pdf_page']
+        image_data = dataset[payload['index']]['image']
+        pdf_name = dataset[payload['index']]['pdf_name']
+        pdf_page = dataset[payload['index']]['pdf_page']
 
         # Prepare LLM interpretation
         # image_obj = PIL.Image.fromarray(image_data) if not isinstance(image_data, PIL.Image.Image) else image_data
         # vllm_output = call_vllm(image_obj)
-        pdf_name = 1
-        pdf_page = 1
         vllm_output = "mock"
+
+        # Convert image to base64 string
+        buffered = BytesIO()
+        image_data.save(buffered, format="JPEG")
+        img_b64_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
         search_results_data.append({
             "score": score,
             "pdf_name": pdf_name,
             "pdf_page": pdf_page,
-            "llm_interpretation": vllm_output
+            "llm_interpretation": vllm_output,
+            "image_base64": img_b64_str  # Add image data to the response
         })
 
     return {"search_results": search_results_data}

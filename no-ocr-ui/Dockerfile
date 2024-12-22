@@ -1,5 +1,5 @@
-# Stage 1: Build the application
-FROM node:18 AS build
+# Use a single node image
+FROM node:18
 
 WORKDIR /app
 
@@ -20,14 +20,10 @@ ARG VITE_REACT_APP_API_URI
 # Build the application
 RUN VITE_SUPABASE_URL=$VITE_SUPABASE_URL VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY VITE_REACT_APP_API_URI=$VITE_REACT_APP_API_URI npm run build
 
-# Stage 2: Serve the application
-FROM nginx:alpine
+# Install serve globally
+RUN npm install -g serve
 
-# Copy the build output to the Nginx HTML directory
-COPY --from=build /app/dist /usr/share/nginx/html
+EXPOSE 5173
 
-# Expose port 80
-EXPOSE 80
-
-# Start Nginx
-CMD ["nginx", "-g", "daemon off;"] 
+# Start the application using serve
+CMD ["serve", "-s", "./dist", "-l", "5173"] 

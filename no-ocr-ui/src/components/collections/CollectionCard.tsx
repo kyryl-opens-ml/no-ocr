@@ -2,7 +2,7 @@ import { FileText, Trash2 } from 'lucide-react';
 import { Collection } from '../../types/collection';
 import { formatDate } from '../../utils/date';
 import { useState } from 'react';
-import { supabase } from '../../lib/supabase';
+import { noOcrApiUrl } from '../../config/api';
 
 interface CollectionCardProps {
   collection: Collection;
@@ -16,12 +16,11 @@ export function CollectionCard({ collection }: CollectionCardProps) {
     
     setIsDeleting(true);
     try {
-      const { error } = await supabase
-        .from('collections')
-        .delete()
-        .eq('id', collection.id);
+      const response = await fetch(`${noOcrApiUrl}/delete_collection/${collection.name}`, {
+        method: 'DELETE',
+      });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Failed to delete collection');
       // Collection will be removed from the list by the parent's useEffect
     } catch (error) {
       console.error('Error deleting collection:', error);

@@ -40,6 +40,7 @@ jobs:
           build-args: |
             VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}
             VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}
+            VITE_REACT_APP_API_URI=${{ secrets.VITE_REACT_APP_API_URI }}
           cache-from: type=registry,ref=ghcr.io/kyryl-opens-ml/no-ocr-ui:buildcache
           cache-to: type=registry,ref=ghcr.io/kyryl-opens-ml/no-ocr-ui:buildcache,mode=max
 

@@ -1,0 +1,1 @@
+export const noOcrApiUrl = import.meta.env.VITE_REACT_APP_API_URI;

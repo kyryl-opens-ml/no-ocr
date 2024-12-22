@@ -1,7 +1,7 @@
-/// Start of Selection
 import React, { useState, useEffect } from 'react';
 import { Search as SearchIcon } from 'lucide-react';
 import { Collection } from '../types/collection';
+import { noOcrApiUrl } from '../config/api';
 
 export default function Search() {
   const [selectedCollection, setSelectedCollection] = useState('');
@@ -14,7 +14,7 @@ export default function Search() {
   useEffect(() => {
     async function fetchCollections() {
       try {
-        const response = await fetch('http://0.0.0.0:8000/get_collections');
+        const response = await fetch(`${noOcrApiUrl}/get_collections`);
         if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();
         setCollections(data.collections || []);
@@ -32,7 +32,7 @@ export default function Search() {
 
     setIsSearching(true);
     try {
-      const response = await fetch('http://0.0.0.0:8000/search', {
+      const response = await fetch(`${noOcrApiUrl}/search`, {
         method: 'POST',
         headers: {
           'Accept': 'application/json',

@@ -3,6 +3,7 @@ import { Collection } from '../../types/collection';
 import { CollectionCard } from './CollectionCard';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
 import { EmptyState } from '../shared/EmptyState';
+import { noOcrApiUrl } from '../../config/api';
 
 export function CollectionList() {
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -11,7 +12,7 @@ export function CollectionList() {
   useEffect(() => {
     async function fetchCollections() {
       try {
-        const response = await fetch('http://0.0.0.0:8000/get_collections');
+        const response = await fetch(`${noOcrApiUrl}/get_collections`);
         if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();
         setCollections(data.collections || []);

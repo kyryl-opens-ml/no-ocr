@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Upload, Loader2 } from 'lucide-react';
+import { noOcrApiUrl } from '../config/api';
 
 export default function CreateCollection() {
   const [collectionName, setCollectionName] = useState('');
@@ -30,7 +31,7 @@ export default function CreateCollection() {
       formData.append('collection_name', collectionName);
       Array.from(files).forEach(file => formData.append('files', file));
 
-      const response = await fetch(`http://0.0.0.0:8000/create_collection`, {
+      const response = await fetch(`${noOcrApiUrl}/create_collection`, {
         method: 'POST',
         body: formData,
       });

@@ -24,7 +24,7 @@ from pypdf import PdfReader
 from qdrant_client import QdrantClient, models
 
 from tqdm import tqdm
-
+import shutil
 app = FastAPI()
 
 # Add CORS middleware to allow any application to call this API
@@ -402,3 +402,40 @@ def get_collections():
     if not collection_data:
         return {"message": "No collection data found.", "collections": []}
     return {"collections": collection_data}
+
+@app.delete("/delete_all_collections")
+def delete_all_collections():
+    """
+    Delete all collections from storage and Qdrant.
+    """
+    # Delete all collections from storage
+    if os.path.exists(settings.STORAGE_DIR):
+        for collection in os.listdir(settings.STORAGE_DIR):
+            shutil.rmtree(os.path.join(settings.STORAGE_DIR, collection))
+
+    # Delete all collections from Qdrant
+    collections = ingest_client.qdrant_client.get_collections().collections
+    for collection in collections:
+        ingest_client.qdrant_client.delete_collection(collection.name)
+
+    return {"message": "All collections have been deleted from storage and Qdrant."}
+
+@app.delete("/delete_collection/{collection_name}")
+def delete_collection(collection_name: str):
+    """
+    Delete a specific collection from storage and Qdrant.
+    """
+    # Delete the collection from storage
+    collection_dir = os.path.join(settings.STORAGE_DIR, collection_name)
+    if os.path.exists(collection_dir):
+        shutil.rmtree(collection_dir)
+    else:
+        raise HTTPException(status_code=404, detail="Collection not found in storage.")
+
+    # Delete the collection from Qdrant
+    try:
+        ingest_client.qdrant_client.delete_collection(collection_name)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"An error occurred while deleting the collection from Qdrant: {str(e)}")
+
+    return {"message": f"Collection '{collection_name}' has been deleted from storage and Qdrant."}

@@ -3,10 +3,18 @@ import { Search as SearchIcon } from 'lucide-react';
 import { Case } from '../types/collection';
 import { noOcrApiUrl } from '../config/api';
 
+// Define a type for search results
+type SearchResult = {
+  image_base64: string;
+  pdf_name: string;
+  pdf_page: number;
+  score: number;
+};
+
 export default function Search() {
   const [selectedCase, setSelectedCase] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [answers, setAnswers] = useState<{ [key: number]: { is_answer: boolean, answer: string } }>({});
 
@@ -53,7 +61,7 @@ export default function Search() {
       const data = await response.json();
       setResults(data.search_results || []);
 
-      data.search_results.forEach((result: any, index: number) => {
+      data.search_results.forEach((result: SearchResult, index: number) => {
         fetchAnswer(searchQuery, selectedCase, result.pdf_name, result.pdf_page)
           .then(answer => {
             setAnswers(prevAnswers => ({ ...prevAnswers, [index]: answer }));

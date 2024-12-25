@@ -19,9 +19,11 @@ from ai_search_demo.qdrant_inexing import SearchClient, pdfs_to_hf_dataset, Inge
 # Initialize OpenAI client
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
+
 class DataSample(BaseModel):
     japanese_query: str
     english_query: str
+
 
 def generate_synthetic_question(image: PIL.Image.Image) -> DataSample:
     # Convert PIL image to base64 string
@@ -57,6 +59,7 @@ def generate_synthetic_question(image: PIL.Image.Image) -> DataSample:
     sample = chat_completion.choices[0].message.parsed
     return sample
 
+
 def create_synthetic_dataset(input_folder: str, output_folder: str, hub_repo: str, num_samples: int = 10) -> None:
     # Step 1: Read all PDFs and extract info
     dataset = pdfs_to_hf_dataset(input_folder)
@@ -71,22 +74,24 @@ def create_synthetic_dataset(input_folder: str, output_folder: str, hub_repo: st
     synthetic_data: List[Dict] = []
 
     for index, data_point in enumerate(tqdm(sampled_data, desc="Generating synthetic questions")):
-        image = data_point['image']
-        pdf_name = data_point['pdf_name']
-        pdf_page = data_point['pdf_page']
+        image = data_point["image"]
+        pdf_name = data_point["pdf_name"]
+        pdf_page = data_point["pdf_page"]
 
         # Step 3: Generate synthetic question
         sample = generate_synthetic_question(image)
 
         # Step 4: Store samples in a new dataset
-        synthetic_data.append({
-            "index": index,
-            "image": image,
-            "question_en": sample.english_query,
-            "question_jp": sample.japanese_query,
-            "pdf_name": pdf_name,
-            "pdf_page": pdf_page
-        })
+        synthetic_data.append(
+            {
+                "index": index,
+                "image": image,
+                "question_en": sample.english_query,
+                "question_jp": sample.japanese_query,
+                "pdf_name": pdf_name,
+                "pdf_page": pdf_page,
+            }
+        )
 
     # Create a new dataset from synthetic data
     synthetic_dataset = Dataset.from_list(synthetic_data)
@@ -95,17 +100,19 @@ def create_synthetic_dataset(input_folder: str, output_folder: str, hub_repo: st
     # Save the dataset card
     synthetic_dataset.push_to_hub(hub_repo, private=False)
 
+
 def evaluate_on_synthetic_dataset(hub_repo: str, collection_name: str = "synthetic-dataset-evaluate-full") -> None:
     # Ingest collection with IngestClient
     print("Load data")
-    synthetic_dataset = load_dataset(hub_repo)['train']
+    synthetic_dataset = load_dataset(hub_repo)["train"]
 
     print("Ingest data to qdrant")
     # ingest_client = IngestClient()
     # ingest_client.ingest(collection_name, synthetic_dataset)
 
-    run_evaluation(synthetic_dataset=synthetic_dataset, collection_name=collection_name, query_text_key='question_en')
-    run_evaluation(synthetic_dataset=synthetic_dataset, collection_name=collection_name, query_text_key='question_jp')
+    run_evaluation(synthetic_dataset=synthetic_dataset, collection_name=collection_name, query_text_key="question_en")
+    run_evaluation(synthetic_dataset=synthetic_dataset, collection_name=collection_name, query_text_key="question_jp")
+
 
 def run_evaluation(synthetic_dataset: Dataset, collection_name: str, query_text_key: str) -> None:
     search_client = SearchClient()
@@ -116,8 +123,10 @@ def run_evaluation(synthetic_dataset: Dataset, collection_name: str, query_text_
         query_id = f"{x['pdf_name']}_{x['pdf_page']}"
         relevant_docs[query_id] = {query_id: 1}  # The most relevant document is itself
 
-        response = search_client.search_images_by_text(query_text=x[query_text_key], collection_name=collection_name, top_k=10)
-        
+        response = search_client.search_images_by_text(
+            query_text=x[query_text_key], collection_name=collection_name, top_k=10
+        )
+
         results[query_id] = {}
         for point in response.points:
             doc_id = f"{point.payload['pdf_name']}_{point.payload['pdf_page']}"
@@ -153,7 +162,7 @@ def run_evaluation(synthetic_dataset: Dataset, collection_name: str, query_text_
     print(table)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = typer.Typer()
     app.command()(create_synthetic_dataset)
     app.command()(evaluate_on_synthetic_dataset)

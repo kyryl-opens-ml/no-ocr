@@ -1,8 +1,10 @@
 import modal
 
-vllm_image = modal.Image.debian_slim(python_version="3.12").pip_install(
-    "vllm==0.6.3post1", "fastapi[standard]==0.115.4"
-).pip_install("colpali-engine")
+vllm_image = (
+    modal.Image.debian_slim(python_version="3.12")
+    .pip_install("vllm==0.6.3post1", "fastapi[standard]==0.115.4")
+    .pip_install("colpali-engine")
+)
 
 MODELS_DIR = "/models"
 MODEL_NAME = "vidore/colqwen2-v1.0-merged"
@@ -12,7 +14,6 @@ try:
     volume = modal.Volume.lookup("models", create_if_missing=False)
 except modal.exception.NotFoundError:
     raise Exception("Download models first with modal run download_llama.py")
-
 
 
 app = modal.App("colpali-embedding")
@@ -97,13 +98,13 @@ def serve():
     @router.post("/process_image")
     async def process_image(image: fastapi.UploadFile):
         from PIL import Image
+
         pil_image = Image.open(image.file)
         with torch.no_grad():
             batch_image = colpali_processor.process_images([pil_image]).to(colpali_model.device)
             image_embedding = colpali_model(**batch_image)
         return {"embedding": image_embedding[0].cpu().float().numpy().tolist()}
 
-    
     # add authed router to our fastAPI app
     web_app.include_router(router)
 

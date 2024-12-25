@@ -15,7 +15,6 @@ except modal.exception.NotFoundError:
     raise Exception("Download models first with modal run download_llama.py")
 
 
-
 app = modal.App("qwen2-vllm")
 
 N_GPU = 1  # tip: for best results, first upgrade to more powerful GPUs, and only then increase GPU count
@@ -95,17 +94,13 @@ def serve():
         enforce_eager=False,  # capture the graph for faster inference, but slower cold starts (30s > 20s)
     )
 
-    engine = AsyncLLMEngine.from_engine_args(
-        engine_args, usage_context=UsageContext.OPENAI_API_SERVER
-    )
+    engine = AsyncLLMEngine.from_engine_args(engine_args, usage_context=UsageContext.OPENAI_API_SERVER)
 
     model_config = get_model_config(engine)
 
     request_logger = RequestLogger(max_log_len=2048)
 
-    base_model_paths = [
-        BaseModelPath(name=MODEL_NAME.split("/")[1], model_path=MODEL_NAME)
-    ]
+    base_model_paths = [BaseModelPath(name=MODEL_NAME.split("/")[1], model_path=MODEL_NAME)]
 
     api_server.chat = lambda s: OpenAIServingChat(
         engine,

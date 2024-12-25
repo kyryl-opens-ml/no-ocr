@@ -5,7 +5,12 @@ import { useState } from 'react';
 import { noOcrApiUrl } from '../../config/api';
 
 interface CaseCardProps {
-  caseItem: Case;
+  caseItem: {
+    name: string;
+    status: string;
+    number_of_PDFs: number;
+    files: string[];
+  };
 }
 
 export function CaseCard({ caseItem }: CaseCardProps) {
@@ -39,12 +44,15 @@ export function CaseCard({ caseItem }: CaseCardProps) {
         </div>
         
         <div className="mt-4 space-y-2">
+          <p className="text-sm text-gray-600">Status: {caseItem.status}</p>
           <p className="text-sm text-gray-600">
-            {caseItem.documentCount} document{caseItem.documentCount !== 1 ? 's' : ''}
+            {caseItem.number_of_PDFs} PDF{caseItem.number_of_PDFs !== 1 ? 's' : ''}
           </p>
-          <p className="text-sm text-gray-500">
-            Created {formatDate(caseItem.createdAt)}
-          </p>
+          <ul className="text-sm text-gray-500">
+            {caseItem.files.map((file, index) => (
+              <li key={index}>{file}</li>
+            ))}
+          </ul>
         </div>
 
         <button

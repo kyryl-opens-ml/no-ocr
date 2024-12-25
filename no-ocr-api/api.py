@@ -25,6 +25,8 @@ from qdrant_client import QdrantClient, models
 
 from tqdm import tqdm
 import shutil
+import diskcache as dc
+
 app = FastAPI()
 
 app.add_middleware(
@@ -286,6 +288,9 @@ def call_vllm(image_data: PIL.Image.Image, user_query: str) -> ImageAnswer:
 search_client = SearchClient()
 ingest_client = IngestClient()
 
+# Persistent cache using diskcache
+cache = dc.Cache("vllm_cache")
+
 @app.post("/vllm_call")
 def vllm_call(
     user_query: str = Form(...),
@@ -297,6 +302,10 @@ def vllm_call(
     Given a collection name, PDF name, and PDF page number, retrieve the corresponding image
     from the HF dataset and call the VLLM function with this image.
     """
+    cache_key = f"{collection_name}_{pdf_name}_{pdf_page}_{user_query}"
+    if cache_key in cache:
+        return cache[cache_key]
+
     dataset_path = os.path.join(settings.STORAGE_DIR, collection_name, settings.HF_DATASET_DIRNAME)
     if not os.path.exists(dataset_path):
         raise HTTPException(status_code=404, detail="Dataset for this collection not found.")
@@ -311,7 +320,9 @@ def vllm_call(
 
     if image_data is None:
         raise HTTPException(status_code=404, detail="Image not found in the dataset for the given PDF name and page number.")
+    
     image_answer = call_vllm(image_data, user_query)
+    cache[cache_key] = image_answer  # Cache the result
     return image_answer
 
 @app.post("/search")
@@ -354,16 +365,6 @@ def ai_search(
         image_data = dataset[payload['index']]['image']
         pdf_name = dataset[payload['index']]['pdf_name']
         pdf_page = dataset[payload['index']]['pdf_page']
-
-        # Prepare LLM interpretation
-        # image_obj = PIL.Image.fromarray(image_data) if not isinstance(image_data, PIL.Image.Image) else image_data
-        # vllm_output = call_vllm(image_obj)
-        prompt = """
-        If the user query is a question, try your best to answer it based on the provided images. 
-        If the user query can not be interpreted as a question, or if the answer to the query can not be inferred from the images,
-        answer with the exact phrase "I am sorry, I can't find enough relevant information on these pages to answer your question.".
-        """
-        vllm_output = call_vllm(image_data, prompt)
 
         # Convert image to base64 string
         buffered = BytesIO()

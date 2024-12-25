@@ -53,6 +53,31 @@ export default function Search() {
     }
   };
 
+  const fetchAnswer = async (userQuery: string, collectionName: string, pdfName: string, pdfPage: number) => {
+    try {
+      const response = await fetch(`${noOcrApiUrl}/vllm_call`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          user_query: userQuery,
+          collection_name: collectionName,
+          pdf_name: pdfName,
+          pdf_page: pdfPage.toString(),
+        }),
+      });
+
+      if (!response.ok) throw new Error('Network response was not ok');
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Fetching answer failed:', error);
+      return { is_answer: false, answer: 'NA' };
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto mt-10 p-6">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">AI Search</h1>
@@ -137,11 +162,15 @@ export default function Search() {
                   </div>
                   <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
                     <h3 className="font-semibold text-blue-800">Does it Answer the Question</h3>
-                    <p className="mt-2 text-md text-blue-700">Yes</p>
+                    <p className="mt-2 text-md text-blue-700">
+                      {result.answer ? result.answer : 'Loading...'}
+                    </p>
                   </div>
                   <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
-                    <h3 className="font-semibold text-blue-800">Text Interpretation</h3>
-                    <p className="mt-2 text-md text-blue-700"> {/* Empty for now */} </p>
+                    <h3 className="font-semibold text-blue-800">Answer</h3>
+                    <p className="mt-2 text-md text-blue-700">
+                      {result.answer ? result.answer : 'Loading...'}
+                    </p>
                   </div>
                 </div>
               </div>

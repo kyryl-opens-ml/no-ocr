@@ -111,31 +111,35 @@ export default function Search() {
           <h2 className="text-2xl font-bold text-blue-900 mb-6">Search Results</h2>
           <div className="grid grid-cols-1 gap-6">
             {results.map((result, index) => (
-              <div key={index} className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl shadow-lg border border-blue-200 grid grid-cols-2 gap-6">
-                <div>
-                  <h3 className="font-semibold text-blue-800 text-lg">
-                    Document Name: <span className="text-blue-600">{result.pdf_name}</span>
-                  </h3>
-                  <p className="mt-2 text-md text-blue-700">
-                    Page: <span className="font-semibold">{result.pdf_page}</span>
-                  </p>
-                  <div className="mt-3 text-md text-blue-600">
-                    Score: <span className="font-semibold">{result.score.toFixed(2)}</span>
-                  </div>
-                  <div className="mt-4">
-                    <img
-                      src={`data:image/jpeg;base64,${result.image_base64}`}
-                      alt={`Page ${result.pdf_page} of ${result.pdf_name}`}
-                      className="w-full h-auto rounded-lg max-w-xs border border-blue-300"
-                    />
-                  </div>
+              <div key={index} className="bg-gradient-to-r from-blue-50 to-blue-100 p-6 rounded-xl shadow-lg border border-blue-200 grid grid-cols-3 gap-6">
+                <div className="col-span-2">
+                  <img
+                    src={`data:image/jpeg;base64,${result.image_base64}`}
+                    alt={`Page ${result.pdf_page} of ${result.pdf_name}`}
+                    className="w-full h-auto rounded-lg border border-blue-300"
+                  />
                 </div>
-                <div>
+                <div className="flex flex-col justify-between">
                   <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200">
+                    <h3 className="font-semibold text-blue-800 text-lg">
+                      Document Name: <span className="text-blue-600">{result.pdf_name}</span>
+                    </h3>
+                  </div>
+                  <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
+                    <p className="text-md text-blue-700">
+                      Page: <span className="font-semibold">{result.pdf_page}</span>
+                    </p>
+                  </div>
+                  <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
+                    <p className="text-md text-blue-700">
+                      Score: <span className="font-semibold">{result.score.toFixed(2)}</span>
+                    </p>
+                  </div>
+                  <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
                     <h3 className="font-semibold text-blue-800">Does it Answer the Question</h3>
                     <p className="mt-2 text-md text-blue-700">Yes</p>
                   </div>
-                  <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-5">
+                  <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
                     <h3 className="font-semibold text-blue-800">Text Interpretation</h3>
                     <p className="mt-2 text-md text-blue-700"> {/* Empty for now */} </p>
                   </div>

@@ -5,8 +5,8 @@ import Navbar from './components/layout/Navbar';
 import { LoginForm } from './components/auth/LoginForm';
 import { RegisterForm } from './components/auth/RegisterForm';
 import { AuthGuard } from './components/auth/AuthGuard';
-import CreateCollection from './components/CreateCollection';
-import Collections from './components/Collections';
+import CreateCase from './components/CreateCase';
+import Cases from './components/Case';
 import Search from './components/Search';
 import About from './components/About';
 
@@ -42,8 +42,8 @@ export default function App() {
                   <Navbar />
                   <main>
                     <Routes>
-                      <Route path="/create-collection" element={<CreateCollection />} />
-                      <Route path="/collections" element={<Collections />} />
+                      <Route path="/create-case" element={<CreateCase />} />
+                      <Route path="/cases" element={<Cases />} />
                       <Route path="/search" element={<Search />} />
                       <Route path="/" element={<Navigate to="/search" replace />} />
                     </Routes>
@@ -52,8 +52,8 @@ export default function App() {
               </AuthGuard>
             }
           >
-            <Route path="/create-collection" element={<CreateCollection />} />
-            <Route path="/collections" element={<Collections />} />
+            <Route path="/create-case" element={<CreateCase />} />
+            <Route path="/cases" element={<Cases />} />
             <Route path="/search" element={<Search />} />
             <Route path="/" element={<Navigate to="/search" replace />} />
           </Route>

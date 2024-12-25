@@ -21,7 +21,7 @@ export function Features() {
           <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
             <Feature 
               icon={FolderPlus}
-              title="Organize Collections"
+              title="Organize Cases"
               description="Create and manage collections of related PDFs. Keep your documents organized and easily accessible."
             />
             <Feature 

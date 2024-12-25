@@ -1,32 +1,32 @@
-import { Collection } from '../../types/collection';
+import { Case } from '../../types/collection';
 
-interface CollectionSelectProps {
-  collections: Collection[];
-  selectedCollection: string;
-  onCollectionChange: (collectionId: string) => void;
+interface CaseSelectProps {
+  cases: Case[];
+  selectedCase: string;
+  onCaseChange: (caseId: string) => void;
 }
 
-export function CollectionSelect({
-  collections,
-  selectedCollection,
-  onCollectionChange,
-}: CollectionSelectProps) {
+export function CaseSelect({
+  cases,
+  selectedCase,
+  onCaseChange,
+}: CaseSelectProps) {
   return (
     <div>
-      <label htmlFor="collection" className="block text-sm font-medium text-gray-700">
-        Select Collection
+      <label htmlFor="case" className="block text-sm font-medium text-gray-700">
+        Select Case
       </label>
       <select
-        id="collection"
-        value={selectedCollection}
-        onChange={(e) => onCollectionChange(e.target.value)}
+        id="case"
+        value={selectedCase}
+        onChange={(e) => onCaseChange(e.target.value)}
         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
         required
       >
-        <option value="">Select a collection</option>
-        {collections.map((collection) => (
-          <option key={collection.id} value={collection.id}>
-            {collection.name}
+        <option value="">Select a case</option>
+        {cases.map((caseItem) => (
+          <option key={caseItem.id} value={caseItem.id}>
+            {caseItem.name}
           </option>
         ))}
       </select>

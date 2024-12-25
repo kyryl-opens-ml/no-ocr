@@ -1,37 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { Search as SearchIcon } from 'lucide-react';
-import { Collection } from '../types/collection';
+import { Case } from '../types/collection';
 import { noOcrApiUrl } from '../config/api';
 
 export default function Search() {
-  const [selectedCollection, setSelectedCollection] = useState('');
+  const [selectedCase, setSelectedCase] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [answers, setAnswers] = useState<{ [key: number]: { is_answer: boolean, answer: string } }>({});
 
-  const [collections, setCollections] = useState<Collection[]>([]);
+  const [cases, setCases] = useState<Case[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImage, setModalImage] = useState('');
 
   useEffect(() => {
-    async function fetchCollections() {
+    async function fetchCases() {
       try {
-        const response = await fetch(`${noOcrApiUrl}/get_collections`);
+        const response = await fetch(`${noOcrApiUrl}/get_cases`);
         if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();
-        setCollections(data.collections || []);
+        setCases(data.cases || []);
       } catch (error) {
-        console.error('Error fetching collections:', error);
+        console.error('Error fetching cases:', error);
       }
     }
 
-    fetchCollections();
+    fetchCases();
   }, []);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedCollection || !searchQuery) return;
+    if (!selectedCase || !searchQuery) return;
 
     setIsSearching(true);
     setResults([]);
@@ -45,7 +45,7 @@ export default function Search() {
         },
         body: new URLSearchParams({
           user_query: searchQuery,
-          collection_name: selectedCollection,
+          case_name: selectedCase,
         }),
       });
 
@@ -54,7 +54,7 @@ export default function Search() {
       setResults(data.search_results || []);
 
       data.search_results.forEach((result: any, index: number) => {
-        fetchAnswer(searchQuery, selectedCollection, result.pdf_name, result.pdf_page)
+        fetchAnswer(searchQuery, selectedCase, result.pdf_name, result.pdf_page)
           .then(answer => {
             setAnswers(prevAnswers => ({ ...prevAnswers, [index]: answer }));
           });
@@ -66,7 +66,7 @@ export default function Search() {
     }
   };
 
-  const fetchAnswer = async (userQuery: string, collectionName: string, pdfName: string, pdfPage: number) => {
+  const fetchAnswer = async (userQuery: string, caseName: string, pdfName: string, pdfPage: number) => {
     try {
       const response = await fetch(`${noOcrApiUrl}/vllm_call`, {
         method: 'POST',
@@ -75,7 +75,7 @@ export default function Search() {
         },
         body: new URLSearchParams({
           user_query: userQuery,
-          collection_name: collectionName,
+          case_name: caseName,
           pdf_name: pdfName,
           pdf_page: pdfPage.toString(),
         }),
@@ -106,21 +106,21 @@ export default function Search() {
       
       <form onSubmit={handleSearch} className="space-y-4">
         <div>
-          <label htmlFor="collection" className="block text-sm font-medium text-gray-700">
-            Select Collection
+          <label htmlFor="case" className="block text-sm font-medium text-gray-700">
+            Select Case
           </label>
           <div className="relative">
             <select
-              id="collection"
-              value={selectedCollection}
-              onChange={(e) => setSelectedCollection(e.target.value)}
+              id="case"
+              value={selectedCase}
+              onChange={(e) => setSelectedCase(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 appearance-none bg-white py-2 px-3 pr-8"
               required
             >
-              <option value="">Select a collection</option>
-              {collections.map((collection) => (
-                <option key={collection.id} value={collection.id}>
-                  {collection.name}
+              <option value="">Select a case</option>
+              {cases.map((caseItem) => (
+                <option key={caseItem.id} value={caseItem.id}>
+                  {caseItem.name}
                 </option>
               ))}
             </select>
@@ -146,7 +146,7 @@ export default function Search() {
 
         <button
           type="submit"
-          disabled={isSearching || !selectedCollection || !searchQuery}
+          disabled={isSearching || !selectedCase || !searchQuery}
           className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {isSearching ? 'Searching...' : 'Search'}
@@ -214,7 +214,7 @@ export default function Search() {
             <img 
               src={`data:image/jpeg;base64,${modalImage}`} 
               alt="Enlarged view" 
-              className="w-full h-auto mt-4 max-h-[100vh] object-contain" 
+              className="w-full h-auto mt-4 max-h-[90vh] object-contain" 
             />
           </div>
         </div>

@@ -1,4 +1,4 @@
-export interface Collection {
+export interface Case {
   id: string;
   name: string;
   documentCount: number;

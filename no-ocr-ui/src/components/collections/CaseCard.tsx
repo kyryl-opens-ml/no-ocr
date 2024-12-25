@@ -1,30 +1,30 @@
 import { FileText, Trash2 } from 'lucide-react';
-import { Collection } from '../../types/collection';
+import { Case } from '../../types/collection';
 import { formatDate } from '../../utils/date';
 import { useState } from 'react';
 import { noOcrApiUrl } from '../../config/api';
 
-interface CollectionCardProps {
-  collection: Collection;
+interface CaseCardProps {
+  caseItem: Case;
 }
 
-export function CollectionCard({ collection }: CollectionCardProps) {
+export function CaseCard({ caseItem }: CaseCardProps) {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this collection?')) return;
+    if (!window.confirm('Are you sure you want to delete this case?')) return;
     
     setIsDeleting(true);
     try {
-      const response = await fetch(`${noOcrApiUrl}/delete_collection/${collection.name}`, {
+      const response = await fetch(`${noOcrApiUrl}/delete_case/${caseItem.name}`, {
         method: 'DELETE',
       });
 
-      if (!response.ok) throw new Error('Failed to delete collection');
-      // Collection will be removed from the list by the parent's useEffect
+      if (!response.ok) throw new Error('Failed to delete case');
+      // Case will be removed from the list by the parent's useEffect
     } catch (error) {
-      console.error('Error deleting collection:', error);
-      alert('Failed to delete collection');
+      console.error('Error deleting case:', error);
+      alert('Failed to delete case');
     } finally {
       setIsDeleting(false);
     }
@@ -35,15 +35,15 @@ export function CollectionCard({ collection }: CollectionCardProps) {
       <div className="p-6">
         <div className="flex items-center gap-x-3">
           <FileText className="h-6 w-6 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">{collection.name}</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{caseItem.name}</h3>
         </div>
         
         <div className="mt-4 space-y-2">
           <p className="text-sm text-gray-600">
-            {collection.documentCount} document{collection.documentCount !== 1 ? 's' : ''}
+            {caseItem.documentCount} document{caseItem.documentCount !== 1 ? 's' : ''}
           </p>
           <p className="text-sm text-gray-500">
-            Created {formatDate(collection.createdAt)}
+            Created {formatDate(caseItem.createdAt)}
           </p>
         </div>
 

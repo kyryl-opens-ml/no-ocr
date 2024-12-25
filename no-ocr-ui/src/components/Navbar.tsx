@@ -21,15 +21,15 @@ export default function Navbar() {
             
             <div className="flex space-x-4">
               <Link
-                to="/create-collection"
+                to="/create-case"
                 className={`inline-flex items-center px-3 py-2 text-sm font-medium ${
-                  location.pathname === '/create-collection'
+                  location.pathname === '/create-case'
                     ? 'text-blue-600 border-b-2 border-blue-600'
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
               >
                 <FolderPlus className="w-5 h-5 mr-2" />
-                Create Collection
+                Create Case
               </Link>
               
               <Link

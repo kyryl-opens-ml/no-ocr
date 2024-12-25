@@ -1,8 +1,11 @@
-export interface Collection {
+export interface Case {
   name: string;
   status: string;
   number_of_PDFs: number;
   files: string[];
+  documentCount: number;
+  createdAt: string;
+  id: string;
 }
 
 export interface SearchResult {

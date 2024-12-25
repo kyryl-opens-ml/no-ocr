@@ -28,14 +28,14 @@ export default function Navbar() {
                     label="AI Search"
                   />
                   <NavLink 
-                    to="/create-collection" 
+                    to="/create-case" 
                     icon={<FolderPlus className="w-5 h-5 mr-2" />}
-                    label="Create Collection"
+                    label="Create Case"
                   />
                   <NavLink 
-                    to="/collections" 
+                    to="/cases" 
                     icon={<Library className="w-5 h-5 mr-2" />}
-                    label="Collections"
+                    label="Cases"
                   />
                 </>
               )}

@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  ui:
+    build: ./no-ocr-ui
+    ports:
+      - "3000:3000"
+
+  api:
+    build: ./no-ocr-api
+    volumes:
+      - api-storage:/app/storage
+    ports:
+      - "5000:5000"
+
+  qdrant:
+    image: qdrant/qdrant:v1.12.5
+    volumes:
+      - qdrant-storage:/qdrant/storage
+    ports:
+      - "6333:6333"
+
+volumes:
+  api-storage:
+  qdrant-storage: 

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Optional
 import json
@@ -322,7 +322,7 @@ def vllm_call(
         raise HTTPException(status_code=404, detail="Image not found in the dataset for the given PDF name and page number.")
     
     image_answer = call_vllm(image_data, user_query)
-    cache[cache_key] = image_answer  # Cache the result
+    cache[cache_key] = image_answer
     return image_answer
 
 @app.post("/search")
@@ -380,10 +380,21 @@ def ai_search(
 
     return {"search_results": search_results_data}
 
+def post_process_case(case_name: str, dataset: Dataset):
+    case_dir = f"{settings.STORAGE_DIR}/{case_name}"
+    with open(os.path.join(case_dir, settings.COLLECTION_INFO_FILENAME), "r") as json_file:
+        case_info = json.load(json_file)
+
+    ingest_client.ingest(case_name, dataset)
+    case_info['status'] = 'done'
+    with open(os.path.join(case_dir, settings.COLLECTION_INFO_FILENAME), "w") as json_file:
+        json.dump(case_info, json_file)    
+
 @app.post("/create_case")
 def create_new_case(
     files: List[UploadFile] = File(...),
-    case_name: str = Form(...)
+    case_name: str = Form(...),
+    background_tasks: BackgroundTasks = BackgroundTasks()
 ):
     """
     Create a new case, store the uploaded PDFs, and process/ingest them.
@@ -410,19 +421,11 @@ def create_new_case(
     with open(os.path.join(case_dir, settings.COLLECTION_INFO_FILENAME), "w") as json_file:
         json.dump(case_info, json_file)
 
-    # Process and ingest
     dataset = pdfs_to_hf_dataset(case_dir)
     dataset.save_to_disk(os.path.join(case_dir, settings.HF_DATASET_DIRNAME))
-    ingest_client.ingest(case_name, dataset)
-    case_info['status'] = 'done'
 
-    with open(os.path.join(case_dir, settings.COLLECTION_INFO_FILENAME), "w") as json_file:
-        json.dump(case_info, json_file)
-
-    return {
-        "message": f"Uploaded {len(files)} PDFs to case '{case_name}'",
-        "case_info": case_info
-    }
+    background_tasks.add_task(post_process_case, case_name=case_name, dataset=dataset)
+    return case_info
 
 @app.get("/get_cases")
 def get_cases():

@@ -42,7 +42,15 @@ export default function CreateCase() {
 
       const result = await response.json();
       console.log('Upload successful:', result);
-      setApiMessage(`Upload successful: ${JSON.stringify(result)}`);
+
+      // Format the API message
+      const formattedMessage = `
+        <strong>Case Name:</strong> ${result.name}<br/>
+        <strong>Status:</strong> ${result.status}<br/>
+        <strong>Number of PDFs:</strong> ${result.number_of_PDFs}<br/>
+        <strong>Files:</strong> ${result.files.join(', ')}
+      `;
+      setApiMessage(formattedMessage);
 
       setUploadProgress(100);
       setTimeout(() => {
@@ -145,7 +153,7 @@ export default function CreateCase() {
 
       {apiMessage && (
         <div className="mt-4 p-4 bg-gray-100 rounded-md">
-          <p className="text-sm text-gray-700">{apiMessage}</p>
+          <p className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: apiMessage }}></p>
         </div>
       )}
     </div>

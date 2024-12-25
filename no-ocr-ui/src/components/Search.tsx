@@ -8,6 +8,7 @@ export default function Search() {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [answers, setAnswers] = useState<{ [key: number]: { is_answer: boolean, answer: string } }>({});
 
   const [collections, setCollections] = useState<Collection[]>([]);
   
@@ -46,6 +47,13 @@ export default function Search() {
       if (!response.ok) throw new Error('Network response was not ok');
       const data = await response.json();
       setResults(data.search_results || []);
+
+      data.search_results.forEach((result: any, index: number) => {
+        fetchAnswer(searchQuery, selectedCollection, result.pdf_name, result.pdf_page)
+          .then(answer => {
+            setAnswers(prevAnswers => ({ ...prevAnswers, [index]: answer }));
+          });
+      });
     } catch (error) {
       console.error('Search failed:', error);
     } finally {
@@ -59,7 +67,6 @@ export default function Search() {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
-          'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
           user_query: userQuery,
@@ -161,15 +168,15 @@ export default function Search() {
                     </p>
                   </div>
                   <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
-                    <h3 className="font-semibold text-blue-800">Does it Answer the Question</h3>
+                    <h3 className="font-semibold text-blue-800">Does it Answer:</h3>
                     <p className="mt-2 text-md text-blue-700">
-                      {result.answer ? result.answer : 'Loading...'}
+                      {answers[index] ? (answers[index].is_answer ? 'Yes' : 'No') : 'Loading...'}
                     </p>
                   </div>
                   <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
-                    <h3 className="font-semibold text-blue-800">Answer</h3>
+                    <h3 className="font-semibold text-blue-800">Answer:</h3>
                     <p className="mt-2 text-md text-blue-700">
-                      {result.answer ? result.answer : 'Loading...'}
+                      {answers[index] ? answers[index].answer : 'Loading...'}
                     </p>
                   </div>
                 </div>

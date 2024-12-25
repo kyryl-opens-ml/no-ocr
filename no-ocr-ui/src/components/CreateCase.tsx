@@ -51,9 +51,14 @@ export default function CreateCase() {
         setFiles(null);
         setUploadProgress(0);
       }, 500);
-    } catch (error) {
-      console.error('Upload failed:', error);
-      setApiMessage(`Upload failed: ${error.message}`);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Upload failed:', error);
+        setApiMessage(`Upload failed: ${error.message}`);
+      } else {
+        console.error('Upload failed:', error);
+        setApiMessage('Upload failed: An unknown error occurred.');
+      }
       setIsUploading(false);
       setUploadProgress(0);
     }

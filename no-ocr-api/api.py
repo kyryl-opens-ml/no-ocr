@@ -27,20 +27,18 @@ from tqdm import tqdm
 import shutil
 app = FastAPI()
 
-# Add CORS middleware to allow any application to call this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 class Settings(BaseSettings):
     STORAGE_DIR: str = "storage"
     COLLECTION_INFO_FILENAME: str = "collection_info.json"
     HF_DATASET_DIRNAME: str = "hf_dataset"
-    README_FILENAME: str = "README.md"
     SEARCH_TOP_K: int = 5
     COLPALI_TOKEN: str = "super-secret-token"
     VLLM_URL: str = "https://truskovskiyk--qwen2-vllm-serve.modal.run/v1/"
@@ -50,15 +48,18 @@ class Settings(BaseSettings):
     VECTOR_SIZE: int = 128
     INDEXING_THRESHOLD: int = 100
     QUANTILE: float = 0.99
-    TOP_K: int = 5
-    
+    TOP_K: int = 3
+    QDRANT_HTTPS: bool = True
+
     class Config:
         env_file = ".env"
 
 settings = Settings()
+print(settings)
 
-
-
+class ImageAnswer(BaseModel):
+    is_answer: bool
+    answer: str
 
 
 
@@ -102,7 +103,7 @@ class ColPaliClient:
 
 class IngestClient:
     def __init__(self, qdrant_uri: str = settings.QDRANT_URI):
-        self.qdrant_client = QdrantClient(qdrant_uri, port=settings.QDRANT_PORT, https=True)
+        self.qdrant_client = QdrantClient(qdrant_uri, port=settings.QDRANT_PORT, https=settings.QDRANT_HTTPS)
         self.colpali_client = ColPaliClient()
 
     def ingest(self, collection_name, dataset):
@@ -168,7 +169,7 @@ class IngestClient:
 
 class SearchClient:
     def __init__(self, qdrant_uri: str = settings.QDRANT_URI):
-        self.qdrant_client = QdrantClient(qdrant_uri, port=settings.QDRANT_PORT, https=True)
+        self.qdrant_client = QdrantClient(qdrant_uri, port=settings.QDRANT_PORT, https=settings.QDRANT_HTTPS)
         self.colpali_client = ColPaliClient()
 
     def search_images_by_text(self, query_text, collection_name: str, top_k=settings.TOP_K):
@@ -236,18 +237,22 @@ def pdfs_to_hf_dataset(path_to_folder):
     return dataset
 
 
-def call_vllm(image_data: PIL.Image.Image):
-    """
-    Send image data to the Qwen2-VL-7B-Instruct endpoint and get the response.
-
-    If no answer can be found from the image for the user's query, 
-    a default message is returned.
-    """
+def call_vllm(image_data: PIL.Image.Image, user_query: str) -> ImageAnswer:
     model = "Qwen2-VL-7B-Instruct"
-    prompt = """
-    If the user query is a question, try your best to answer it based on the provided images. 
-    If the user query can not be interpreted as a question, or if the answer to the query can not be inferred from the images,
-    answer with the exact phrase "I am sorry, I can't find enough relevant information on these pages to answer your question.".
+
+
+
+    prompt = f"""
+    Based on the user's query: {user_query} and the provided image, determine if the image contains enough information to answer the query.
+    If it does, provide the most accurate answer possible based on the image.
+    If it does not, respond with the exact phrase "NA".
+
+    Please return your response in valid JSON with the structure:
+    {{
+        "is_answer": true or false,
+        "answer": "Answer text or NA"
+    }}
+    If the image cannot answer the query, set "is_answer" to false and "answer" to "NA".
     """
 
     buffered = BytesIO()
@@ -257,7 +262,7 @@ def call_vllm(image_data: PIL.Image.Image):
     img_b64_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
     client = OpenAI(base_url=settings.VLLM_URL, api_key=settings.COLPALI_TOKEN)
-    chat_completion = client.chat.completions.create(
+    completion = client.beta.chat.completions.parse(
         model=model,
         messages=[
             {
@@ -271,11 +276,43 @@ def call_vllm(image_data: PIL.Image.Image):
                 ],
             }
         ],
+        response_format=ImageAnswer,
+        extra_body=dict(guided_decoding_backend="outlines"),
     )
-    return chat_completion.choices[0].message.content
+    message = completion.choices[0].message
+    result = message.parsed
+    return result
 
 search_client = SearchClient()
 ingest_client = IngestClient()
+
+@app.post("/vllm_call")
+def vllm_call(
+    user_query: str = Form(...),
+    collection_name: str = Form(...),
+    pdf_name: str = Form(...),
+    pdf_page: int = Form(...)
+) -> ImageAnswer:
+    """
+    Given a collection name, PDF name, and PDF page number, retrieve the corresponding image
+    from the HF dataset and call the VLLM function with this image.
+    """
+    dataset_path = os.path.join(settings.STORAGE_DIR, collection_name, settings.HF_DATASET_DIRNAME)
+    if not os.path.exists(dataset_path):
+        raise HTTPException(status_code=404, detail="Dataset for this collection not found.")
+
+    dataset = load_from_disk(dataset_path)
+    image_data = None
+
+    for data in dataset:
+        if data['pdf_name'] == pdf_name and data['pdf_page'] == pdf_page:
+            image_data = data['image']
+            break
+
+    if image_data is None:
+        raise HTTPException(status_code=404, detail="Image not found in the dataset for the given PDF name and page number.")
+    image_answer = call_vllm(image_data, user_query)
+    return image_answer
 
 @app.post("/search")
 def ai_search(
@@ -321,7 +358,12 @@ def ai_search(
         # Prepare LLM interpretation
         # image_obj = PIL.Image.fromarray(image_data) if not isinstance(image_data, PIL.Image.Image) else image_data
         # vllm_output = call_vllm(image_obj)
-        vllm_output = "mock"
+        prompt = """
+        If the user query is a question, try your best to answer it based on the provided images. 
+        If the user query can not be interpreted as a question, or if the answer to the query can not be inferred from the images,
+        answer with the exact phrase "I am sorry, I can't find enough relevant information on these pages to answer your question.".
+        """
+        vllm_output = call_vllm(image_data, prompt)
 
         # Convert image to base64 string
         buffered = BytesIO()
@@ -332,7 +374,6 @@ def ai_search(
             "score": score,
             "pdf_name": pdf_name,
             "pdf_page": pdf_page,
-            "llm_interpretation": vllm_output,
             "image_base64": img_b64_str  # Add image data to the response
         })
 
@@ -369,17 +410,13 @@ def create_new_collection(
         json.dump(collection_info, json_file)
 
     # Process and ingest
-    try:
-        dataset = pdfs_to_hf_dataset(collection_dir)
-        dataset.save_to_disk(os.path.join(collection_dir, settings.HF_DATASET_DIRNAME))
-        ingest_client.ingest(collection_name, dataset)
-        collection_info['status'] = 'done'
-    except Exception as e:
-        collection_info['status'] = 'error'
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-    finally:
-        with open(os.path.join(collection_dir, settings.COLLECTION_INFO_FILENAME), "w") as json_file:
-            json.dump(collection_info, json_file)
+    dataset = pdfs_to_hf_dataset(collection_dir)
+    dataset.save_to_disk(os.path.join(collection_dir, settings.HF_DATASET_DIRNAME))
+    ingest_client.ingest(collection_name, dataset)
+    collection_info['status'] = 'done'
+
+    with open(os.path.join(collection_dir, settings.COLLECTION_INFO_FILENAME), "w") as json_file:
+        json.dump(collection_info, json_file)
 
     return {
         "message": f"Uploaded {len(files)} PDFs to collection '{collection_name}'",

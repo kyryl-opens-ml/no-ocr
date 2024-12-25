@@ -157,3 +157,8 @@ curl -X 'POST' \
     }
   ]
 }  
+
+
+docker run -p 6333:6333 qdrant/qdrant:v1.12.5
+fastapi dev api.py
+npm run dev

@@ -63,9 +63,9 @@ export default function CreateCollection() {
     <div className="max-w-2xl mx-auto mt-10 p-6">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Create New Collection</h1>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-md">
         <div>
-          <label htmlFor="collection-name" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="collection-name" className="block text-sm font-medium text-gray-700 mb-2">
             Collection Name
           </label>
           <input
@@ -73,7 +73,7 @@ export default function CreateCollection() {
             id="collection-name"
             value={collectionName}
             onChange={(e) => setCollectionName(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2"
             placeholder="Enter collection name"
             required
           />

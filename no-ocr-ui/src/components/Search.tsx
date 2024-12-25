@@ -11,7 +11,9 @@ export default function Search() {
   const [answers, setAnswers] = useState<{ [key: number]: { is_answer: boolean, answer: string } }>({});
 
   const [collections, setCollections] = useState<Collection[]>([]);
-  
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalImage, setModalImage] = useState('');
+
   useEffect(() => {
     async function fetchCollections() {
       try {
@@ -32,8 +34,8 @@ export default function Search() {
     if (!selectedCollection || !searchQuery) return;
 
     setIsSearching(true);
-    setResults([]); // Clear old results
-    setAnswers({}); // Clear old answers
+    setResults([]);
+    setAnswers({});
 
     try {
       const response = await fetch(`${noOcrApiUrl}/search`, {
@@ -86,6 +88,16 @@ export default function Search() {
       console.error('Fetching answer failed:', error);
       return { is_answer: false, answer: 'NA' };
     }
+  };
+
+  const openModal = (imageBase64: string) => {
+    setModalImage(imageBase64);
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalImage('');
   };
 
   return (
@@ -151,7 +163,8 @@ export default function Search() {
                   <img
                     src={`data:image/jpeg;base64,${result.image_base64}`}
                     alt={`Page ${result.pdf_page} of ${result.pdf_name}`}
-                    className="w-full h-auto rounded-lg border border-blue-300"
+                    className="w-full h-auto rounded-lg border border-blue-300 cursor-pointer"
+                    onClick={() => openModal(result.image_base64)}
                   />
                 </div>
                 <div className="flex flex-col justify-between">
@@ -185,6 +198,15 @@ export default function Search() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg shadow-lg">
+            <button onClick={closeModal} className="text-red-500">Close</button>
+            <img src={`data:image/jpeg;base64,${modalImage}`} alt="Enlarged view" className="w-full h-auto mt-4" />
           </div>
         </div>
       )}

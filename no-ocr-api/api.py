@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     STORAGE_DIR: str = "storage"
     COLLECTION_INFO_FILENAME: str = "collection_info.json"
     HF_DATASET_DIRNAME: str = "hf_dataset"
-    SEARCH_TOP_K: int = 5
+    SEARCH_TOP_K: int = 3
     COLPALI_TOKEN: str = "super-secret-token"
     VLLM_URL: str = "https://truskovskiyk--qwen2-vllm-serve.modal.run/v1/"
     COLPALI_BASE_URL: str = "https://truskovskiyk--colpali-embedding-serve.modal.run"
@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     VECTOR_SIZE: int = 128
     INDEXING_THRESHOLD: int = 100
     QUANTILE: float = 0.99
-    TOP_K: int = 3
+    TOP_K: int = 5
     QDRANT_HTTPS: bool = True
 
     class Config:

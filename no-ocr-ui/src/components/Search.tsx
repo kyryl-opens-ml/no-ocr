@@ -32,6 +32,9 @@ export default function Search() {
     if (!selectedCollection || !searchQuery) return;
 
     setIsSearching(true);
+    setResults([]); // Clear old results
+    setAnswers({}); // Clear old answers
+
     try {
       const response = await fetch(`${noOcrApiUrl}/search`, {
         method: 'POST',

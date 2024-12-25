@@ -204,9 +204,18 @@ export default function Search() {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-4 rounded-lg shadow-lg">
-            <button onClick={closeModal} className="text-red-500">Close</button>
-            <img src={`data:image/jpeg;base64,${modalImage}`} alt="Enlarged view" className="w-full h-auto mt-4" />
+          <div className="bg-white p-4 rounded-lg shadow-lg max-w-5xl w-full relative">
+            <button 
+              onClick={closeModal} 
+              className="absolute top-2 right-2 text-red-500 bg-white rounded-full p-1 shadow-lg hover:bg-red-500 hover:text-white transition duration-300 ease-in-out"
+            >
+              ✖
+            </button>
+            <img 
+              src={`data:image/jpeg;base64,${modalImage}`} 
+              alt="Enlarged view" 
+              className="w-full h-auto mt-4 max-h-[100vh] object-contain" 
+            />
           </div>
         </div>
       )}

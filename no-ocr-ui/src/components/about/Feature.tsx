@@ -1,9 +1,10 @@
+// Feature component for highlighting key RAG and ColPali-based capabilities.
 import { LucideIcon } from 'lucide-react';
 
 interface FeatureProps {
-  icon: LucideIcon;
-  title: string;
-  description: string;
+  icon: LucideIcon;  // Lucide icon component to represent the feature
+  title: string;     // Feature name/title
+  description: string; // Feature description supporting markdown
 }
 
 export function Feature({ icon: Icon, title, description }: FeatureProps) {

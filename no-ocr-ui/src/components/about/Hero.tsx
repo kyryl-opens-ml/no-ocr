@@ -1,6 +1,10 @@
 import { FileSearch } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+/**
+ * Hero showcases the main application's vision-driven RAG features
+ * and invites users to explore our advanced AI search.
+ */
 export function Hero() {
   return (
     <div className="relative isolate overflow-hidden bg-white">
@@ -27,18 +31,18 @@ export function Hero() {
           <div className="mt-24 sm:mt-32 lg:mt-16">
             <Link to="/" className="inline-flex space-x-6">
               <span className="rounded-full bg-blue-600/10 px-3 py-1 text-sm font-semibold leading-6 text-blue-600 ring-1 ring-inset ring-blue-600/10">
-                What's new
+                Latest Features
               </span>
               <span className="inline-flex items-center space-x-2 text-sm font-medium leading-6 text-gray-600">
-                <span>Just shipped v1.0</span>
+                <span>Capitalizing on Vision-based RAG</span>
               </span>
             </Link>
           </div>
           <h1 className="mt-10 text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-            Search Your PDFs with AI
+            Intelligent Document &amp; Image Search with RAG
           </h1>
           <p className="mt-6 text-lg leading-8 text-gray-600">
-            Transform the way you search through documents. Our AI-powered search engine understands context and finds exactly what you're looking for across all your PDFs.
+            Explore an end-to-end solution for complex PDFs and images, powered by ColPali embeddings and LanceDB for robust vector storage. Our AI understands diagrams, text, and more—making retrieval truly comprehensive.
           </p>
           <div className="mt-10 flex items-center gap-x-6">
             <Link
@@ -58,10 +62,10 @@ export function Hero() {
               <div className="w-[28rem] rounded-md bg-white p-8 shadow-2xl ring-1 ring-gray-900/10">
                 <div className="flex items-center gap-4">
                   <FileSearch className="h-8 w-8 text-blue-600" />
-                  <h2 className="text-lg font-semibold">AI Search</h2>
+                  <h2 className="text-lg font-semibold">Multi-Modal AI Search</h2>
                 </div>
                 <p className="mt-4 text-sm text-gray-600">
-                  "Find all mentions of machine learning algorithms in our research papers from 2023"
+                  "Find all relevant diagrams and text discussing large-scale inference costs in 2023 research papers."
                 </p>
                 <div className="mt-6 flex gap-4">
                   <div className="flex-1 rounded-lg bg-gray-100 px-4 py-3">
@@ -75,7 +79,7 @@ export function Hero() {
             </div>
           </div>
         </div>
-      </div>
+      </div>  
     </div>
   );
 }

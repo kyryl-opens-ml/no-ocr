@@ -8,13 +8,13 @@ export default function Navbar() {
   const { user } = useAuthStore();
   
   return (
-    <nav className="bg-white shadow-md">
+    <nav className="bg-background shadow-md">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between h-16">
           <div className="flex space-x-8">
             <Link 
               to="/" 
-              className="flex items-center text-xl font-semibold text-gray-900"
+              className="flex items-center text-xl font-heading text-secondary"
             >
               NoOCR
             </Link>

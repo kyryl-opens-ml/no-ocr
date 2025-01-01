@@ -1,10 +1,10 @@
 import { BookOpen, Search, MessageSquare } from 'lucide-react';
 
 /**
- * HowItWorks introduces the RAG workflow with references to
- * the "Remove Complexity from Your RAG Applications" approach.
- * Emphasizes ColPali-based PDFs as images, LanceDB for embeddings,
- * and an LLM for final Q&A.
+ * HowItWorks outlines our simplified RAG approach:
+ * - Step 1: Upload & Process Complex PDFs (creates a "case")
+ * - Step 2: We process your case and make it searchable
+ * - Step 3: Ask any question, now using the latest open source vision models
  */
 export function HowItWorks() {
   return (
@@ -15,7 +15,7 @@ export function HowItWorks() {
             How It Works
           </h2>
           <p className="mt-6 text-lg leading-8 text-gray-600">
-            Our platform adopts the multi-modal RAG approach highlighted by Kyryl Opens ML, leveraging ColPali for rich PDF page embeddings and LanceDB for straightforward vector management. We’ve packaged everything with Modal for easy GPU access and advanced pipeline orchestration.
+            Our platform adopts a streamlined RAG approach. Simply create a case by uploading your PDFs, let us process them, then ask any question—even about visual elements—using best-in-class open source reasoning models.
           </p>
           
           <div className="mt-16 space-y-20 lg:mt-20 lg:space-y-20">
@@ -31,10 +31,10 @@ export function HowItWorks() {
                 </div>
                 <div className="group relative max-w-xl">
                   <h3 className="mt-3 text-lg font-semibold leading-6 text-gray-900">
-                    Upload &amp; Process Complex PDFs or Images
+                    Upload &amp; Process Complex PDFs
                   </h3>
                   <p className="mt-5 text-sm leading-6 text-gray-600">
-                    We ingest your PDF files—no matter how visually dense—by treating each page like an image. ColPali converts it into embeddings, ready for indexing in LanceDB. This eliminates the need for heavy OCR pipelines.
+                    Create a new case by uploading your most challenging PDF documents. Our system treats each PDF page carefully, generating embeddings without heavy OCR.
                   </p>
                 </div>
               </div>
@@ -52,10 +52,10 @@ export function HowItWorks() {
                 </div>
                 <div className="group relative max-w-xl">
                   <h3 className="mt-3 text-lg font-semibold leading-6 text-gray-900">
-                    Vector Storage &amp; Retrieval
+                    We Make It Searchable
                   </h3>
                   <p className="mt-5 text-sm leading-6 text-gray-600">
-                    We store your document embeddings in LanceDB, offering efficient vector search with minimal overhead. This handles both text-based and vision-based embeddings for advanced multi-modal queries.
+                    Once your case is processed, you can quickly run text-based queries to find relevant pages and references—no matter how intricate the PDF layout might be.
                   </p>
                 </div>
               </div>
@@ -73,10 +73,10 @@ export function HowItWorks() {
                 </div>
                 <div className="group relative max-w-xl">
                   <h3 className="mt-3 text-lg font-semibold leading-6 text-gray-900">
-                    Final AI Q&amp;A
+                    Ask Any Visual-Based Question
                   </h3>
                   <p className="mt-5 text-sm leading-6 text-gray-600">
-                    For each user query, our multi-modal approach quickly surfaces relevant pages, images, and text, then a specialized LLM (e.g., Phi3.5-vision) refines the final answer. The result: a streamlined, context-aware Q&amp;A experience.
+                    Our approach quickly surfaces relevant pages, then a specialized open source vision model refines the final answer. Even if your PDFs have charts or diagrams, you’ll receive context-aware insights.
                   </p>
                 </div>
               </div>

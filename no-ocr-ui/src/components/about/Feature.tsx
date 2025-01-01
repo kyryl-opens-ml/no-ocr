@@ -1,4 +1,4 @@
-// Feature component for highlighting key RAG and ColPali-based capabilities.
+// Feature component for highlighting key capabilities based on ColPali for PDF document embeddings.
 import { LucideIcon } from 'lucide-react';
 
 interface FeatureProps {

@@ -2,7 +2,7 @@ import { FileSearch } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 /**
- * Hero showcases the main application's vision-driven RAG features
+ * Hero showcases the main application's document-oriented RAG features
  * and invites users to explore our advanced AI search.
  */
 export function Hero() {
@@ -34,15 +34,16 @@ export function Hero() {
                 Latest Features
               </span>
               <span className="inline-flex items-center space-x-2 text-sm font-medium leading-6 text-gray-600">
-                <span>Capitalizing on Vision-based RAG</span>
+                <span>Document-First RAG</span>
               </span>
             </Link>
           </div>
           <h1 className="mt-10 text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-            Intelligent Document &amp; Image Search with RAG
+            Intelligent Document Search with RAG
           </h1>
           <p className="mt-6 text-lg leading-8 text-gray-600">
-            Explore an end-to-end solution for complex PDFs and images, powered by ColPali embeddings and LanceDB for robust vector storage. Our AI understands diagrams, text, and more—making retrieval truly comprehensive.
+            Explore an end-to-end solution for complex PDFs, powered by ColPali embeddings. Our AI understands 
+            your documents’ deep structure—making retrieval truly comprehensive.
           </p>
           <div className="mt-10 flex items-center gap-x-6">
             <Link
@@ -62,10 +63,10 @@ export function Hero() {
               <div className="w-[28rem] rounded-md bg-white p-8 shadow-2xl ring-1 ring-gray-900/10">
                 <div className="flex items-center gap-4">
                   <FileSearch className="h-8 w-8 text-blue-600" />
-                  <h2 className="text-lg font-semibold">Multi-Modal AI Search</h2>
+                  <h2 className="text-lg font-semibold">AI-Assisted Search</h2>
                 </div>
                 <p className="mt-4 text-sm text-gray-600">
-                  "Find all relevant diagrams and text discussing large-scale inference costs in 2023 research papers."
+                  "Find all relevant references discussing inference costs in 2023 PDF reports."
                 </p>
                 <div className="mt-6 flex gap-4">
                   <div className="flex-1 rounded-lg bg-gray-100 px-4 py-3">

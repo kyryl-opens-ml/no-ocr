@@ -1,10 +1,10 @@
-import { FileSearch, FolderPlus, Zap } from 'lucide-react';
+import { FileSearch, FolderPlus, Zap, Layers } from 'lucide-react';
 import { Feature } from './Feature';
 
 /**
- * Features showcase the advanced RAG lifecycle as described in the Kyryl Opens ML blog post.
- * Emphasizes how our platform uses ColPali for vision-based retrieval,
- * LanceDB for robust embeddings storage, and Modal for GPU-powered workflows.
+ * Features showcase the simplified RAG lifecycle.
+ * Removes direct mentions of images or LanceDB,
+ * adds open source and multi-case features.
  */
 export function Features() {
   return (
@@ -15,29 +15,39 @@ export function Features() {
             Remove Complexity from Your RAG Applications
           </h2>
           <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-            Next-Generation Document &amp; Image Search
+            Next-Generation Document Search
           </p>
           <p className="mt-6 text-lg leading-8 text-gray-600">
-            Powered by ColPali for vision-driven retrieval and backed by LanceDB for lightning-fast vector search, our platform simplifies data ingestion and harnesses the power of advanced RAG technology for seamless PDF and image analysis.
+            Powered by ColPali for document-focused retrieval, our platform simplifies data ingestion 
+            and harnesses advanced RAG technology for seamless PDF analysis.
           </p>
         </div>
-        
+
+        {/* 
+          Updated to four features, removing references to image or LanceDB speed,
+          adding open source and multi-case features. 
+        */}
         <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
-          <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
+          <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-4">
             <Feature 
               icon={FolderPlus}
-              title="ColPali Vision Embeddings"
-              description="Go beyond standard OCR. Harness powerful image embeddings for complex PDFs, charts, and infographics using ColPali to truly capture visual context."
+              title="ColPali Document Embeddings"
+              description="Go beyond standard OCR. Harness powerful embeddings for complex PDFs to truly capture important context."
             />
             <Feature 
               icon={FileSearch}
               title="RAG-First Platform"
-              description="Combine intelligent textual retrieval with advanced (re)ranking and multi-modal analysis for robust query understanding, following the best practices in the 'Remove Complexity from Your RAG Applications' blog."
+              description="Combine intelligent textual retrieval with advanced ranking for robust query understanding, following best practices in modern RAG systems."
             />
             <Feature 
               icon={Zap}
-              title="LanceDB-Powered Speed"
-              description="Turbocharge your search with LanceDB vectors, enabling efficient storage and retrieval. Lightning-fast queries, minimal latency, all at scale."
+              title="Open Source & Self-Hosting"
+              description="Your data remains secure. Easily self-host our platform and adapt it to your infrastructure — no vendor lock-in."
+            />
+            <Feature 
+              icon={Layers}
+              title="Multiple Cases at Once"
+              description="Seamlessly work on several document cases in parallel, keeping ingestion and search workflows efficient and organized."
             />
           </dl>
         </div>

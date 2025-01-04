@@ -27,6 +27,30 @@ from qdrant_client import QdrantClient, models
 from tqdm import tqdm
 import shutil
 import diskcache as dc
+import logging
+
+
+class CustomRailwayLogFormatter(logging.Formatter):
+    def format(self, record):
+        log_record = {
+            "time": self.formatTime(record),
+            "level": record.levelname,
+            "message": record.getMessage()
+        }
+        return json.dumps(log_record)
+
+def get_logger():
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO) # this should be just "logger.setLevel(logging.INFO)" but markdown is interpreting it wrong here...
+    handler = logging.StreamHandler()
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+    formatter = CustomRailwayLogFormatter()
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    return logger
+
+logger = get_logger()
 
 app = FastAPI()
 
@@ -99,7 +123,7 @@ class IngestClient:
         self.colpali_client = ColPaliClient()
 
     def ingest(self, case_name, dataset):
-        print("start ingest")
+        logger.info("start ingest")
         start_time = time.time()
         
         self.qdrant_client.create_collection(
@@ -148,13 +172,13 @@ class IngestClient:
                         wait=False,
                     )
                 except Exception as e:
-                    print(f"Error during upsert: {e}")
+                    logger.error(f"Error during upsert: {e}")
                     continue
                 pbar.update(1)
 
-        print("Indexing complete!")
+        logger.info("Indexing complete!")
         end_time = time.time()
-        print(f"done ingest, total time {end_time - start_time}")
+        logger.info(f"done ingest, total time {end_time - start_time}")
 
 
 class SearchClient:
@@ -163,7 +187,7 @@ class SearchClient:
         self.colpali_client = ColPaliClient()
 
     def search_images_by_text(self, query_text, case_name: str, top_k=settings.TOP_K):
-        print("start search_images_by_text")
+        logger.info("start search_images_by_text")
         start_time = time.time()
         
         # Use ColPaliClient to query text and get the embedding
@@ -176,13 +200,13 @@ class SearchClient:
         search_result = self.qdrant_client.query_points(collection_name=case_name, query=multivector_query, limit=top_k)
         
         end_time = time.time()
-        print(f"done search_images_by_text, total time {end_time - start_time}")
+        logger.info(f"done search_images_by_text, total time {end_time - start_time}")
 
         return search_result
 
 
 def get_pdf_images(pdf_path):
-    print("start get_pdf_images")
+    logger.info("start get_pdf_images")
     start_time = time.time()
     
     reader = PdfReader(pdf_path)
@@ -198,13 +222,13 @@ def get_pdf_images(pdf_path):
     assert len(images) == len(page_texts)
     
     end_time = time.time()
-    print(f"done get_pdf_images, total time {end_time - start_time}")
+    logger.info(f"done get_pdf_images, total time {end_time - start_time}")
     
     return images, page_texts
 
 
 def pdfs_to_hf_dataset(path_to_folder):
-    print("start pdfs_to_hf_dataset")
+    logger.info("start pdfs_to_hf_dataset")
     start_time = time.time()
     
     tracemalloc.start()  # Start tracing memory allocations
@@ -233,24 +257,24 @@ def pdfs_to_hf_dataset(path_to_folder):
 
         # Print memory usage after processing each PDF
         current, peak = tracemalloc.get_traced_memory()
-        print(f"PDF: Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
+        logger.info(f"PDF: Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
 
     current, peak = tracemalloc.get_traced_memory()
-    print(f"TOTAL: Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
+    logger.info(f"TOTAL: Current memory usage is {current / 10**6}MB; Peak was {peak / 10**6}MB")
     tracemalloc.stop()  # Stop tracing memory allocations
 
-    print("Done processing")
+    logger.info("Done processing")
     dataset = Dataset.from_list(data)
-    print("Done converting to dataset")
+    logger.info("Done converting to dataset")
     
     end_time = time.time()
-    print(f"done pdfs_to_hf_dataset, total time {end_time - start_time}")
+    logger.info(f"done pdfs_to_hf_dataset, total time {end_time - start_time}")
     
     return dataset
 
 
 def call_vllm(image_data: PIL.Image.Image, user_query: str) -> ImageAnswer:
-    print("start call_vllm")
+    logger.info("start call_vllm")
     start_time = time.time()
     
     model = "Qwen2-VL-7B-Instruct"
@@ -296,7 +320,7 @@ def call_vllm(image_data: PIL.Image.Image, user_query: str) -> ImageAnswer:
     result = message.parsed
     
     end_time = time.time()
-    print(f"done call_vllm, total time {end_time - start_time}")
+    logger.info(f"done call_vllm, total time {end_time - start_time}")
     
     return result
 
@@ -312,7 +336,7 @@ cache = dc.Cache("vllm_cache")
 def vllm_call(
     user_query: str = Form(...), case_name: str = Form(...), pdf_name: str = Form(...), pdf_page: int = Form(...)
 ) -> ImageAnswer:
-    print("start vllm_call")
+    logger.info("start vllm_call")
     start_time = time.time()
     
     """
@@ -344,14 +368,14 @@ def vllm_call(
     cache[cache_key] = image_answer
     
     end_time = time.time()
-    print(f"done vllm_call, total time {end_time - start_time}")
+    logger.info(f"done vllm_call, total time {end_time - start_time}")
     
     return image_answer
 
 
 @app.post("/search")
 def ai_search(user_query: str = Form(...), case_name: str = Form(...)):
-    print("start ai_search")
+    logger.info("start ai_search")
     start_time = time.time()
     
     """
@@ -380,7 +404,7 @@ def ai_search(user_query: str = Form(...), case_name: str = Form(...)):
     search_results_data = []
     for result in search_results.points:
         payload = result.payload
-        print(payload)
+        logger.info(payload)
         score = result.score
         image_data = dataset[payload["index"]]["image"]
         pdf_name = dataset[payload["index"]]["pdf_name"]
@@ -401,13 +425,13 @@ def ai_search(user_query: str = Form(...), case_name: str = Form(...)):
         )
     
     end_time = time.time()
-    print(f"done ai_search, total time {end_time - start_time}")
+    logger.info(f"done ai_search, total time {end_time - start_time}")
 
     return {"search_results": search_results_data}
 
 
 def post_process_case(case_name: str, dataset: Dataset):
-    print("start post_process_case")
+    logger.info("start post_process_case")
     start_time = time.time()
     
     case_dir = f"{settings.STORAGE_DIR}/{case_name}"
@@ -420,7 +444,7 @@ def post_process_case(case_name: str, dataset: Dataset):
         json.dump(case_info, json_file)
     
     end_time = time.time()
-    print(f"done post_process_case, total time {end_time - start_time}")
+    logger.info(f"done post_process_case, total time {end_time - start_time}")
 
 
 @app.post("/create_case")
@@ -429,7 +453,7 @@ def create_new_case(
     case_name: str = Form(...),
     background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
-    print("start create_new_case")
+    logger.info("start create_new_case")
     start_time = time.time()
     
     """
@@ -458,14 +482,14 @@ def create_new_case(
     background_tasks.add_task(post_process_case, case_name=case_name, dataset=dataset)
     
     end_time = time.time()
-    print(f"done create_new_case, total time {end_time - start_time}")
+    logger.info(f"done create_new_case, total time {end_time - start_time}")
     
     return case_info
 
 
 @app.get("/get_cases")
 def get_cases():
-    print("start get_cases")
+    logger.info("start get_cases")
     start_time = time.time()
     
     """
@@ -488,14 +512,14 @@ def get_cases():
         return {"message": "No case data found.", "cases": []}
     
     end_time = time.time()
-    print(f"done get_cases, total time {end_time - start_time}")
+    logger.info(f"done get_cases, total time {end_time - start_time}")
     
     return {"cases": case_data}
 
 
 @app.get("/get_case/{case_name}")
 def get_case(case_name: str):
-    print("start get_case")
+    logger.info("start get_case")
     start_time = time.time()
     
     """
@@ -509,14 +533,14 @@ def get_case(case_name: str):
         case_info = json.load(json_file)
     
     end_time = time.time()
-    print(f"done get_case, total time {end_time - start_time}")
+    logger.info(f"done get_case, total time {end_time - start_time}")
 
     return case_info
 
 
 @app.delete("/delete_all_cases")
 def delete_all_cases():
-    print("start delete_all_cases")
+    logger.info("start delete_all_cases")
     start_time = time.time()
     
     """
@@ -533,14 +557,14 @@ def delete_all_cases():
         ingest_client.qdrant_client.delete_collection(case.name)
     
     end_time = time.time()
-    print(f"done delete_all_cases, total time {end_time - start_time}")
+    logger.info(f"done delete_all_cases, total time {end_time - start_time}")
 
     return {"message": "All cases have been deleted from storage and Qdrant."}
 
 
 @app.delete("/delete_case/{case_name}")
 def delete_case(case_name: str):
-    print("start delete_case")
+    logger.info("start delete_case")
     start_time = time.time()
     
     """
@@ -560,6 +584,6 @@ def delete_case(case_name: str):
         raise HTTPException(status_code=500, detail=f"An error occurred while deleting the case from Qdrant: {str(e)}")
     
     end_time = time.time()
-    print(f"done delete_case, total time {end_time - start_time}")
+    logger.info(f"done delete_case, total time {end_time - start_time}")
 
     return {"message": f"Case '{case_name}' has been deleted from storage and Qdrant."}

@@ -1,7 +1,6 @@
 import { FileText, Trash2 } from 'lucide-react';
-import { Case } from '../../types/collection';
-import { formatDate } from '../../utils/date';
 import { useState } from 'react';
+import { useAuthStore } from '../../stores/authStore';
 import { noOcrApiUrl } from '../../config/api';
 
 interface CaseCardProps {
@@ -14,9 +13,17 @@ interface CaseCardProps {
 }
 
 export function CaseCard({ caseItem }: CaseCardProps) {
+  const { user } = useAuthStore();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [apiMessage, setApiMessage] = useState<string | null>(null);
 
   const handleDelete = async () => {
+    // If not signed in, block the actual delete action:
+    if (!user) {
+      setApiMessage('You must be logged in to delete a case.');
+      return;
+    }
+
     if (!window.confirm('Are you sure you want to delete this case?')) return;
     
     setIsDeleting(true);
@@ -26,10 +33,10 @@ export function CaseCard({ caseItem }: CaseCardProps) {
       });
 
       if (!response.ok) throw new Error('Failed to delete case');
-      // Case will be removed from the list by the parent's useEffect
+      // The parent component (CaseList) will remove the case upon refresh
     } catch (error) {
       console.error('Error deleting case:', error);
-      alert('Failed to delete case');
+      setApiMessage('Failed to delete case');
     } finally {
       setIsDeleting(false);
     }
@@ -55,13 +62,21 @@ export function CaseCard({ caseItem }: CaseCardProps) {
           </ul>
         </div>
 
-        <button
-          onClick={handleDelete}
-          disabled={isDeleting}
-          className="absolute top-4 right-4 p-2 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <Trash2 className="h-5 w-5" />
-        </button>
+        {user && (
+          <button
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <Trash2 className="h-5 w-5" />
+          </button>
+        )}
+
+        {apiMessage && (
+          <div className="mt-4 p-4 bg-gray-100 rounded-md">
+            <p className="text-sm text-gray-700">{apiMessage}</p>
+          </div>
+        )}
       </div>
     </div>
   );

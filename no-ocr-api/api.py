@@ -16,6 +16,7 @@ from openai import OpenAI
 import io
 import tracemalloc
 from pathlib import Path
+import time
 
 import requests
 from datasets import Dataset
@@ -98,6 +99,9 @@ class IngestClient:
         self.colpali_client = ColPaliClient()
 
     def ingest(self, case_name, dataset):
+        print("start ingest")
+        start_time = time.time()
+        
         self.qdrant_client.create_collection(
             collection_name=case_name,
             on_disk_payload=True,
@@ -149,6 +153,8 @@ class IngestClient:
                 pbar.update(1)
 
         print("Indexing complete!")
+        end_time = time.time()
+        print(f"done ingest, total time {end_time - start_time}")
 
 
 class SearchClient:
@@ -157,6 +163,9 @@ class SearchClient:
         self.colpali_client = ColPaliClient()
 
     def search_images_by_text(self, query_text, case_name: str, top_k=settings.TOP_K):
+        print("start search_images_by_text")
+        start_time = time.time()
+        
         # Use ColPaliClient to query text and get the embedding
         query_embedding = self.colpali_client.query_text(query_text)
 
@@ -165,11 +174,17 @@ class SearchClient:
 
         # Search in Qdrant
         search_result = self.qdrant_client.query_points(collection_name=case_name, query=multivector_query, limit=top_k)
+        
+        end_time = time.time()
+        print(f"done search_images_by_text, total time {end_time - start_time}")
 
         return search_result
 
 
 def get_pdf_images(pdf_path):
+    print("start get_pdf_images")
+    start_time = time.time()
+    
     reader = PdfReader(pdf_path)
     page_texts = []
     for page_number in range(len(reader.pages)):
@@ -181,10 +196,17 @@ def get_pdf_images(pdf_path):
         pdf_path, dpi=150, fmt="jpeg", jpegopt={"quality": 100, "progressive": True, "optimize": True}
     )
     assert len(images) == len(page_texts)
+    
+    end_time = time.time()
+    print(f"done get_pdf_images, total time {end_time - start_time}")
+    
     return images, page_texts
 
 
 def pdfs_to_hf_dataset(path_to_folder):
+    print("start pdfs_to_hf_dataset")
+    start_time = time.time()
+    
     tracemalloc.start()  # Start tracing memory allocations
 
     data = []
@@ -220,10 +242,17 @@ def pdfs_to_hf_dataset(path_to_folder):
     print("Done processing")
     dataset = Dataset.from_list(data)
     print("Done converting to dataset")
+    
+    end_time = time.time()
+    print(f"done pdfs_to_hf_dataset, total time {end_time - start_time}")
+    
     return dataset
 
 
 def call_vllm(image_data: PIL.Image.Image, user_query: str) -> ImageAnswer:
+    print("start call_vllm")
+    start_time = time.time()
+    
     model = "Qwen2-VL-7B-Instruct"
 
     prompt = f"""
@@ -265,6 +294,10 @@ def call_vllm(image_data: PIL.Image.Image, user_query: str) -> ImageAnswer:
     )
     message = completion.choices[0].message
     result = message.parsed
+    
+    end_time = time.time()
+    print(f"done call_vllm, total time {end_time - start_time}")
+    
     return result
 
 
@@ -279,6 +312,9 @@ cache = dc.Cache("vllm_cache")
 def vllm_call(
     user_query: str = Form(...), case_name: str = Form(...), pdf_name: str = Form(...), pdf_page: int = Form(...)
 ) -> ImageAnswer:
+    print("start vllm_call")
+    start_time = time.time()
+    
     """
     Given a collection name, PDF name, and PDF page number, retrieve the corresponding image
     from the HF dataset and call the VLLM function with this image.
@@ -306,11 +342,18 @@ def vllm_call(
 
     image_answer = call_vllm(image_data, user_query)
     cache[cache_key] = image_answer
+    
+    end_time = time.time()
+    print(f"done vllm_call, total time {end_time - start_time}")
+    
     return image_answer
 
 
 @app.post("/search")
 def ai_search(user_query: str = Form(...), case_name: str = Form(...)):
+    print("start ai_search")
+    start_time = time.time()
+    
     """
     Given a user query and case name, search relevant images in the Qdrant index
     and return both the results and an LLM interpretation.
@@ -356,11 +399,17 @@ def ai_search(user_query: str = Form(...), case_name: str = Form(...)):
                 "image_base64": img_b64_str,  # Add image data to the response
             }
         )
+    
+    end_time = time.time()
+    print(f"done ai_search, total time {end_time - start_time}")
 
     return {"search_results": search_results_data}
 
 
 def post_process_case(case_name: str, dataset: Dataset):
+    print("start post_process_case")
+    start_time = time.time()
+    
     case_dir = f"{settings.STORAGE_DIR}/{case_name}"
     with open(os.path.join(case_dir, settings.CASE_INFO_FILENAME), "r") as json_file:
         case_info = json.load(json_file)
@@ -369,6 +418,9 @@ def post_process_case(case_name: str, dataset: Dataset):
     case_info["status"] = "done"
     with open(os.path.join(case_dir, settings.CASE_INFO_FILENAME), "w") as json_file:
         json.dump(case_info, json_file)
+    
+    end_time = time.time()
+    print(f"done post_process_case, total time {end_time - start_time}")
 
 
 @app.post("/create_case")
@@ -377,6 +429,9 @@ def create_new_case(
     case_name: str = Form(...),
     background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
+    print("start create_new_case")
+    start_time = time.time()
+    
     """
     Create a new case, store the uploaded PDFs, and process/ingest them.
     """
@@ -401,11 +456,18 @@ def create_new_case(
     dataset.save_to_disk(os.path.join(case_dir, settings.HF_DATASET_DIRNAME))
 
     background_tasks.add_task(post_process_case, case_name=case_name, dataset=dataset)
+    
+    end_time = time.time()
+    print(f"done create_new_case, total time {end_time - start_time}")
+    
     return case_info
 
 
 @app.get("/get_cases")
 def get_cases():
+    print("start get_cases")
+    start_time = time.time()
+    
     """
     Return a list of all previously uploaded cases with their metadata.
     """
@@ -424,11 +486,18 @@ def get_cases():
 
     if not case_data:
         return {"message": "No case data found.", "cases": []}
+    
+    end_time = time.time()
+    print(f"done get_cases, total time {end_time - start_time}")
+    
     return {"cases": case_data}
 
 
 @app.get("/get_case/{case_name}")
 def get_case(case_name: str):
+    print("start get_case")
+    start_time = time.time()
+    
     """
     Return the metadata of a specific case by its name.
     """
@@ -438,12 +507,18 @@ def get_case(case_name: str):
 
     with open(case_info_path, "r") as json_file:
         case_info = json.load(json_file)
+    
+    end_time = time.time()
+    print(f"done get_case, total time {end_time - start_time}")
 
     return case_info
 
 
 @app.delete("/delete_all_cases")
 def delete_all_cases():
+    print("start delete_all_cases")
+    start_time = time.time()
+    
     """
     Delete all cases from storage and Qdrant.
     """
@@ -456,12 +531,18 @@ def delete_all_cases():
     cases = ingest_client.qdrant_client.get_collections().collections
     for case in cases:
         ingest_client.qdrant_client.delete_collection(case.name)
+    
+    end_time = time.time()
+    print(f"done delete_all_cases, total time {end_time - start_time}")
 
     return {"message": "All cases have been deleted from storage and Qdrant."}
 
 
 @app.delete("/delete_case/{case_name}")
 def delete_case(case_name: str):
+    print("start delete_case")
+    start_time = time.time()
+    
     """
     Delete a specific case from storage and Qdrant.
     """
@@ -477,5 +558,8 @@ def delete_case(case_name: str):
         ingest_client.qdrant_client.delete_collection(case_name)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred while deleting the case from Qdrant: {str(e)}")
+    
+    end_time = time.time()
+    print(f"done delete_case, total time {end_time - start_time}")
 
     return {"message": f"Case '{case_name}' has been deleted from storage and Qdrant."}

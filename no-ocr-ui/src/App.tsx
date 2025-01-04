@@ -4,7 +4,6 @@ import { initializeAuth } from './stores/authStore';
 import Navbar from './components/layout/Navbar';
 import { LoginForm } from './components/auth/LoginForm';
 import { RegisterForm } from './components/auth/RegisterForm';
-import { AuthGuard } from './components/auth/AuthGuard';
 import CreateCase from './components/CreateCase';
 import Cases from './components/Case';
 import Search from './components/Search';
@@ -18,46 +17,24 @@ export default function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<LoginForm />} />
-          <Route path="/register" element={<RegisterForm />} />
-          
-          {/* Public route with navigation */}
-          <Route
-            path="/about"
-            element={
-              <>
-                <Navbar />
-                <About />
-              </>
-            }
-          />
-          
-          {/* Protected routes */}
-          <Route
-            element={
-              <AuthGuard>
-                <>
-                  <Navbar />
-                  <main>
-                    <Routes>
-                      <Route path="/create-case" element={<CreateCase />} />
-                      <Route path="/cases" element={<Cases />} />
-                      <Route path="/search" element={<Search />} />
-                      <Route path="/" element={<Navigate to="/search" replace />} />
-                    </Routes>
-                  </main>
-                </>
-              </AuthGuard>
-            }
-          >
-            <Route path="/create-case" element={<CreateCase />} />
-            <Route path="/cases" element={<Cases />} />
-            <Route path="/search" element={<Search />} />
+        <Navbar />
+        <main>
+          <Routes>
+            {/* Public routes (no authentication required) */}
             <Route path="/" element={<Navigate to="/search" replace />} />
-          </Route>
-        </Routes>
+            <Route path="/search" element={<Search />} />
+            <Route path="/cases" element={<Cases />} />
+            <Route path="/create-case" element={<CreateCase />} />
+            <Route path="/about" element={<About />} />
+
+            {/* Auth pages */}
+            <Route path="/login" element={<LoginForm />} />
+            <Route path="/register" element={<RegisterForm />} />
+
+            {/* Fallback for uncaught routes */}
+            <Route path="*" element={<Navigate to="/search" replace />} />
+          </Routes>
+        </main>
       </div>
     </Router>
   );

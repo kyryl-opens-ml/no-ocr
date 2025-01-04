@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Upload, Loader2 } from 'lucide-react';
+import { useAuthStore } from '../stores/authStore';
 import { noOcrApiUrl } from '../config/api';
 
 export default function CreateCase() {
+  const { user } = useAuthStore();
   const [caseName, setCaseName] = useState('');
   const [files, setFiles] = useState<FileList | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -11,13 +12,19 @@ export default function CreateCase() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!files || !caseName) return;
-
-    setIsUploading(true);
     
-    // Simulated upload progress
+    // If not signed in, block the actual create action:
+    if (!user) {
+      setApiMessage('You must be logged in to create a case.');
+      return;
+    }
+
+    if (!files || !caseName) return;
+    setIsUploading(true);
+
+    // Simulate upload progress
     const interval = setInterval(() => {
-      setUploadProgress(prev => {
+      setUploadProgress((prev) => {
         if (prev >= 95) {
           clearInterval(interval);
           return prev;
@@ -43,15 +50,7 @@ export default function CreateCase() {
       const result = await response.json();
       console.log('Upload successful:', result);
 
-      // Format the API message
-      const formattedMessage = `
-        <strong>Case Name:</strong> ${result.name}<br/>
-        <strong>Status:</strong> ${result.status}<br/>
-        <strong>Number of PDFs:</strong> ${result.number_of_PDFs}<br/>
-        <strong>Files:</strong> ${result.files.join(', ')}
-      `;
-      setApiMessage(formattedMessage);
-
+      setApiMessage(`Case created successfully: ${result.name}`);
       setUploadProgress(100);
       setTimeout(() => {
         setIsUploading(false);
@@ -75,8 +74,14 @@ export default function CreateCase() {
   return (
     <div className="max-w-2xl mx-auto mt-10 p-6">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Create New Case</h1>
-      
+
       <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow-md">
+        {!user && (
+          <div className="bg-yellow-50 p-4 rounded text-yellow-700 mb-4">
+            You are not logged in. You can view this page, but you must sign in to actually create a new case.
+          </div>
+        )}
+
         <div>
           <label htmlFor="case-name" className="block text-sm font-medium text-gray-700 mb-2">
             Case Name
@@ -93,14 +98,11 @@ export default function CreateCase() {
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Upload PDFs
-          </label>
+          <label className="block text-sm font-medium text-gray-700">Upload PDFs</label>
           <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
             <div className="space-y-1 text-center">
-              <Upload className="mx-auto h-12 w-12 text-gray-400" />
               <div className="flex text-sm text-gray-600">
-                <label htmlFor="pdfs" className="relative cursor-pointer rounded-md bg-white font-medium text-blue-600 focus-within:outline-none focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 hover:text-blue-500">
+                <label htmlFor="pdfs" className="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500">
                   <span>Upload PDFs</span>
                   <input
                     id="pdfs"
@@ -109,7 +111,6 @@ export default function CreateCase() {
                     multiple
                     accept=".pdf"
                     onChange={(e) => setFiles(e.target.files)}
-                    required
                   />
                 </label>
                 <p className="pl-1">or drag and drop</p>
@@ -137,23 +138,16 @@ export default function CreateCase() {
 
         <button
           type="submit"
-          disabled={isUploading || !files || !caseName}
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          disabled={isUploading || !caseName || !files}
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
         >
-          {isUploading ? (
-            <>
-              <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />
-              Processing...
-            </>
-          ) : (
-            'Create Case'
-          )}
+          {isUploading ? 'Processing...' : 'Create Case'}
         </button>
       </form>
 
       {apiMessage && (
         <div className="mt-4 p-4 bg-gray-100 rounded-md">
-          <p className="text-sm text-gray-700" dangerouslySetInnerHTML={{ __html: apiMessage }}></p>
+          <p className="text-sm text-gray-700">{apiMessage}</p>
         </div>
       )}
     </div>

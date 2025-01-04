@@ -20,25 +20,22 @@ export default function Navbar() {
             </Link>
             
             <div className="flex space-x-4">
-              {user && (
-                <>
-                  <NavLink 
-                    to="/search" 
-                    icon={<FileSearch className="w-5 h-5 mr-2" />}
-                    label="AI Search"
-                  />
-                  <NavLink 
-                    to="/create-case" 
-                    icon={<FolderPlus className="w-5 h-5 mr-2" />}
-                    label="Create Case"
-                  />
-                  <NavLink 
-                    to="/cases" 
-                    icon={<Library className="w-5 h-5 mr-2" />}
-                    label="Cases"
-                  />
-                </>
-              )}
+              <NavLink 
+                to="/search" 
+                icon={<FileSearch className="w-5 h-5 mr-2" />}
+                label="AI Search"
+              />
+              <NavLink 
+                to="/create-case" 
+                icon={<FolderPlus className="w-5 h-5 mr-2" />}
+                label="Create Case"
+              />
+              <NavLink 
+                to="/cases" 
+                icon={<Library className="w-5 h-5 mr-2" />}
+                label="Cases"
+              />
+              
               <NavLink 
                 to="/about" 
                 icon={<Info className="w-5 h-5 mr-2" />}

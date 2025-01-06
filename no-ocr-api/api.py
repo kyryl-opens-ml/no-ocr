@@ -41,7 +41,7 @@ class CustomRailwayLogFormatter(logging.Formatter):
 
 def get_logger():
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO) # this should be just "logger.setLevel(logging.INFO)" but markdown is interpreting it wrong here...
+    logger.setLevel(logging.INFO)
     handler = logging.StreamHandler()
     for handler in logger.handlers[:]:
         logger.removeHandler(handler)
@@ -89,6 +89,23 @@ settings = Settings()
 class ImageAnswer(BaseModel):
     is_answer: bool
     answer: str
+
+class CaseInfo(BaseModel):
+    name: str
+    unique_name: str
+    status: str
+    number_of_PDFs: int
+    files: List[str]
+    case_dir: Path
+
+    def save(self):
+        with open(self.case_dir / settings.CASE_INFO_FILENAME, "w") as json_file:
+            json.dump(self.model_dump(), json_file, default=str)
+
+    def update_status(self, new_status: str):
+        self.status = new_status
+        self.save()
+
 
 
 class ColPaliClient:
@@ -328,7 +345,6 @@ def call_vllm(image_data: PIL.Image.Image, user_query: str) -> ImageAnswer:
 search_client = SearchClient()
 ingest_client = IngestClient()
 
-# Persistent cache using diskcache
 cache = dc.Cache("vllm_cache")
 
 
@@ -374,29 +390,30 @@ def vllm_call(
 
 
 @app.post("/search")
-def ai_search(user_query: str = Form(...), case_name: str = Form(...)):
+def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: str = Form(...)):
     logger.info("start ai_search")
     start_time = time.time()
     
     """
-    Given a user query and case name, search relevant images in the Qdrant index
+    Given a user query, user ID, and case name, search relevant images in the Qdrant index
     and return both the results and an LLM interpretation.
     """
     if not os.path.exists(settings.STORAGE_DIR):
         raise HTTPException(status_code=404, detail="No collections found.")
 
-    case_info_path = os.path.join(settings.STORAGE_DIR, case_name, settings.CASE_INFO_FILENAME)
+    case_info_path = os.path.join(settings.STORAGE_DIR, user_id, case_name, settings.CASE_INFO_FILENAME)
     if not os.path.exists(case_info_path):
         raise HTTPException(status_code=404, detail="Case info not found.")
 
     with open(case_info_path, "r") as json_file:
         _ = json.load(json_file)  # case_info is not used directly below
 
-    search_results = search_client.search_images_by_text(user_query, case_name=case_name, top_k=settings.SEARCH_TOP_K)
+    unique_name =f"{user_id}_{case_name}"
+    search_results = search_client.search_images_by_text(user_query, case_name=unique_name, top_k=settings.SEARCH_TOP_K)
     if not search_results:
         return {"message": "No results found."}
 
-    dataset_path = os.path.join(settings.STORAGE_DIR, case_name, settings.HF_DATASET_DIRNAME)
+    dataset_path = os.path.join(settings.STORAGE_DIR, user_id, case_name, settings.HF_DATASET_DIRNAME)
     if not os.path.exists(dataset_path):
         raise HTTPException(status_code=404, detail="Dataset for this case not found.")
 
@@ -430,40 +447,39 @@ def ai_search(user_query: str = Form(...), case_name: str = Form(...)):
     return {"search_results": search_results_data}
 
 
-def post_process_case(case_name: str, dataset: Dataset):
+def process_case(case_info: CaseInfo):
     logger.info("start post_process_case")
     start_time = time.time()
     
-    case_dir = f"{settings.STORAGE_DIR}/{case_name}"
-    with open(os.path.join(case_dir, settings.CASE_INFO_FILENAME), "r") as json_file:
-        case_info = json.load(json_file)
+    dataset = pdfs_to_hf_dataset(case_info.case_dir)
+    dataset.save_to_disk(case_info.case_dir /  settings.HF_DATASET_DIRNAME)
+    ingest_client.ingest(case_info.unique_name, dataset)
 
-    ingest_client.ingest(case_name, dataset)
-    case_info["status"] = "done"
-    with open(os.path.join(case_dir, settings.CASE_INFO_FILENAME), "w") as json_file:
-        json.dump(case_info, json_file)
+    case_info.update_status("done")
     
     end_time = time.time()
-    logger.info(f"done post_process_case, total time {end_time - start_time}")
+    logger.info(f"done process_case, total time {end_time - start_time}")
+
 
 
 @app.post("/create_case")
 def create_new_case(
+    user_id: str = Form(...),
     files: List[UploadFile] = File(...),
     case_name: str = Form(...),
     background_tasks: BackgroundTasks = BackgroundTasks(),
-):
+) -> CaseInfo:
     logger.info("start create_new_case")
     start_time = time.time()
     
     """
-    Create a new case, store the uploaded PDFs, and process/ingest them.
+    Create a new case for a specific user, store the uploaded PDFs, and process/ingest them.
     """
-    if not files or not case_name:
-        raise HTTPException(status_code=400, detail="No files or case name provided.")
+    if not files or not case_name or not user_id:
+        raise HTTPException(status_code=400, detail="No files, case name, or user ID provided.")
 
-    case_dir = f"{settings.STORAGE_DIR}/{case_name}"
-    os.makedirs(case_dir, exist_ok=True)
+    case_dir = Path(f"{settings.STORAGE_DIR}/{user_id}/{case_name}")
+    case_dir.mkdir(parents=True, exist_ok=True)
 
     file_names = []
     for uploaded_file in files:
@@ -472,14 +488,18 @@ def create_new_case(
             f.write(uploaded_file.file.read())
         file_names.append(uploaded_file.filename)
 
-    case_info = {"name": case_name, "status": "processing", "number_of_PDFs": len(files), "files": file_names}
-    with open(os.path.join(case_dir, settings.CASE_INFO_FILENAME), "w") as json_file:
-        json.dump(case_info, json_file)
+    case_info = CaseInfo(
+        name=case_name,
+        unique_name=f"{user_id}_{case_name}",
+        status="processing",
+        number_of_PDFs=len(files),
+        files=file_names,
+        case_dir=case_dir,  
+    )
+    case_info.save()
 
-    dataset = pdfs_to_hf_dataset(case_dir)
-    dataset.save_to_disk(os.path.join(case_dir, settings.HF_DATASET_DIRNAME))
 
-    background_tasks.add_task(post_process_case, case_name=case_name, dataset=dataset)
+    background_tasks.add_task(process_case, case_info=case_info)
     
     end_time = time.time()
     logger.info(f"done create_new_case, total time {end_time - start_time}")
@@ -488,25 +508,37 @@ def create_new_case(
 
 
 @app.get("/get_cases")
-def get_cases():
+def get_cases(user_id: str):
     logger.info("start get_cases")
     start_time = time.time()
     
     """
-    Return a list of all previously uploaded cases with their metadata.
+    Return a list of all previously uploaded cases for a specific user with their metadata.
     """
-    if not os.path.exists(settings.STORAGE_DIR):
+    user_storage_dir = os.path.join(settings.STORAGE_DIR, user_id)
+    if not os.path.exists(user_storage_dir):
         return {"message": "No cases found.", "cases": []}
 
-    cases = os.listdir(settings.STORAGE_DIR)
+    cases = os.listdir(user_storage_dir)
     case_data = []
 
     for case in cases:
-        case_info_path = os.path.join(settings.STORAGE_DIR, case, settings.CASE_INFO_FILENAME)
+        case_info_path = os.path.join(user_storage_dir, case, settings.CASE_INFO_FILENAME)
         if os.path.exists(case_info_path):
             with open(case_info_path, "r") as json_file:
-                case_info = json.load(json_file)
-                case_data.append(case_info)
+                case_info = CaseInfo(**json.load(json_file))
+                case_data.append(case_info.dict())
+
+    # Add common cases
+    common_cases_dir = os.path.join(settings.STORAGE_DIR, "common_cases")
+    if os.path.exists(common_cases_dir):
+        common_cases = os.listdir(common_cases_dir)
+        for case in common_cases:
+            case_info_path = os.path.join(common_cases_dir, case, settings.CASE_INFO_FILENAME)
+            if os.path.exists(case_info_path):
+                with open(case_info_path, "r") as json_file:
+                    case_info = CaseInfo(**json.load(json_file))
+                    case_data.append(case_info.dict())
 
     if not case_data:
         return {"message": "No case data found.", "cases": []}
@@ -518,24 +550,27 @@ def get_cases():
 
 
 @app.get("/get_case/{case_name}")
-def get_case(case_name: str):
+def get_case(user_id: str, case_name: str) -> CaseInfo:
     logger.info("start get_case")
     start_time = time.time()
     
     """
-    Return the metadata of a specific case by its name.
+    Return the metadata of a specific case by its name for a specific user.
     """
-    case_info_path = os.path.join(settings.STORAGE_DIR, case_name, settings.CASE_INFO_FILENAME)
+    case_info_path = os.path.join(settings.STORAGE_DIR, user_id, case_name, settings.CASE_INFO_FILENAME)
     if not os.path.exists(case_info_path):
-        raise HTTPException(status_code=404, detail="Case info not found.")
+        # Check common cases
+        case_info_path = os.path.join(settings.STORAGE_DIR, "common_cases", case_name, settings.CASE_INFO_FILENAME)
+        if not os.path.exists(case_info_path):
+            raise HTTPException(status_code=404, detail="Case info not found.")
 
     with open(case_info_path, "r") as json_file:
-        case_info = json.load(json_file)
+        case_info = CaseInfo(**json.load(json_file))
     
     end_time = time.time()
     logger.info(f"done get_case, total time {end_time - start_time}")
 
-    return case_info
+    return case_info.dict()
 
 
 @app.delete("/delete_all_cases")
@@ -563,15 +598,15 @@ def delete_all_cases():
 
 
 @app.delete("/delete_case/{case_name}")
-def delete_case(case_name: str):
+def delete_case(user_id: str, case_name: str):
     logger.info("start delete_case")
     start_time = time.time()
     
     """
-    Delete a specific case from storage and Qdrant.
+    Delete a specific case from storage and Qdrant for a specific user.
     """
     # Delete the case from storage
-    case_dir = os.path.join(settings.STORAGE_DIR, case_name)
+    case_dir = os.path.join(settings.STORAGE_DIR, user_id, case_name)
     if os.path.exists(case_dir):
         shutil.rmtree(case_dir)
     else:

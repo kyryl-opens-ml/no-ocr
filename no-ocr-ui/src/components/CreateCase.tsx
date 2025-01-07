@@ -36,6 +36,7 @@ export default function CreateCase() {
     try {
       const formData = new FormData();
       formData.append('case_name', caseName);
+      formData.append('user_id', user.id); // Add user id to form data
       Array.from(files).forEach(file => formData.append('files', file));
 
       const response = await fetch(`${noOcrApiUrl}/create_case`, {

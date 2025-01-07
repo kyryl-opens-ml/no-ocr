@@ -4,15 +4,22 @@ import { CaseCard } from './CaseCard';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
 import { EmptyState } from '../shared/EmptyState';
 import { noOcrApiUrl } from '../../config/api';
+import { useAuthStore } from '../../stores/authStore';
 
 export function CaseList() {
   const [cases, setCases] = useState<Case[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
     async function fetchCases() {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        const response = await fetch(`${noOcrApiUrl}/get_cases`);
+        const response = await fetch(`${noOcrApiUrl}/get_cases?user_id=${user.id}`);
         if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();
         setCases(data.cases || []);
@@ -24,7 +31,7 @@ export function CaseList() {
     }
 
     fetchCases();
-  }, []);
+  }, [user]);
 
   if (isLoading) return <LoadingSpinner />;
 

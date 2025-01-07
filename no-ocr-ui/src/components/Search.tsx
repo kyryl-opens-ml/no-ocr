@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search as SearchIcon } from 'lucide-react';
 import { Case } from '../types/collection';
 import { noOcrApiUrl } from '../config/api';
+import { useAuthStore } from '../stores/authStore';
 
 // Define a type for search results
 type SearchResult = {
@@ -12,6 +13,7 @@ type SearchResult = {
 };
 
 export default function Search() {
+  const { user } = useAuthStore();
   const [selectedCase, setSelectedCase] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -25,7 +27,7 @@ export default function Search() {
   useEffect(() => {
     async function fetchCases() {
       try {
-        const response = await fetch(`${noOcrApiUrl}/get_cases`);
+        const response = await fetch(`${noOcrApiUrl}/get_cases?user_id=${user?.id}`);
         if (!response.ok) throw new Error('Network response was not ok');
         const data = await response.json();
         setCases(data.cases || []);
@@ -35,7 +37,7 @@ export default function Search() {
     }
 
     fetchCases();
-  }, []);
+  }, [user]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +55,7 @@ export default function Search() {
         },
         body: new URLSearchParams({
           user_query: searchQuery,
+          user_id: user?.id || '',
           case_name: selectedCase,
         }),
       });
@@ -83,6 +86,7 @@ export default function Search() {
         },
         body: new URLSearchParams({
           user_query: userQuery,
+          user_id: user?.id || '',
           case_name: caseName,
           pdf_name: pdfName,
           pdf_page: pdfPage.toString(),

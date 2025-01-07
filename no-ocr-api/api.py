@@ -350,20 +350,20 @@ cache = dc.Cache("vllm_cache")
 
 @app.post("/vllm_call")
 def vllm_call(
-    user_query: str = Form(...), case_name: str = Form(...), pdf_name: str = Form(...), pdf_page: int = Form(...)
+    user_query: str = Form(...), user_id: str = Form(...), case_name: str = Form(...), pdf_name: str = Form(...), pdf_page: int = Form(...)
 ) -> ImageAnswer:
     logger.info("start vllm_call")
     start_time = time.time()
     
     """
-    Given a collection name, PDF name, and PDF page number, retrieve the corresponding image
+    Given a user ID, collection name, PDF name, and PDF page number, retrieve the corresponding image
     from the HF dataset and call the VLLM function with this image.
     """
-    cache_key = f"{case_name}_{pdf_name}_{pdf_page}_{user_query}"
+    cache_key = f"{user_id}_{case_name}_{pdf_name}_{pdf_page}_{user_query}"
     if cache_key in cache:
         return cache[cache_key]
 
-    dataset_path = os.path.join(settings.STORAGE_DIR, case_name, settings.HF_DATASET_DIRNAME)
+    dataset_path = os.path.join(settings.STORAGE_DIR, user_id, case_name, settings.HF_DATASET_DIRNAME)
     if not os.path.exists(dataset_path):
         raise HTTPException(status_code=404, detail="Dataset for this case not found.")
 

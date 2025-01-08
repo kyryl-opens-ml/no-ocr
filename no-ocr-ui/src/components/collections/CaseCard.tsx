@@ -2,6 +2,7 @@ import { FileText, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import { noOcrApiUrl } from '../../config/api';
+import { Link } from 'react-router-dom';
 
 interface CaseCardProps {
   caseItem: {
@@ -83,7 +84,9 @@ export function CaseCard({ caseItem }: CaseCardProps) {
       <div className="p-6">
         <div className="flex items-center gap-x-3">
           <FileText className="h-6 w-6 text-blue-600" />
-          <h3 className="text-lg font-semibold text-gray-900">{caseItem.name}</h3>
+          <Link to={`/search?case=${caseItem.name}`} className="text-lg font-semibold text-gray-900 hover:underline">
+            {caseItem.name}
+          </Link>
         </div>
         
         <div className="mt-4 space-y-2">

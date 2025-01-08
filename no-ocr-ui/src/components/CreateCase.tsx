@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../stores/authStore';
 import { noOcrApiUrl } from '../config/api';
+import { useNavigate } from 'react-router-dom';
 
 export default function CreateCase() {
   const { user } = useAuthStore();
@@ -9,11 +10,11 @@ export default function CreateCase() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [apiMessage, setApiMessage] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // If not signed in, block the actual create action:
     if (!user) {
       setApiMessage('You must be logged in to create a case.');
       return;
@@ -22,7 +23,6 @@ export default function CreateCase() {
     if (!files || !caseName) return;
     setIsUploading(true);
 
-    // Simulate upload progress
     const interval = setInterval(() => {
       setUploadProgress((prev) => {
         if (prev >= 95) {
@@ -36,7 +36,7 @@ export default function CreateCase() {
     try {
       const formData = new FormData();
       formData.append('case_name', caseName);
-      formData.append('user_id', user.id); // Add user id to form data
+      formData.append('user_id', user.id);
       Array.from(files).forEach(file => formData.append('files', file));
 
       const response = await fetch(`${noOcrApiUrl}/create_case`, {
@@ -58,6 +58,7 @@ export default function CreateCase() {
         setCaseName('');
         setFiles(null);
         setUploadProgress(0);
+        navigate('/cases');
       }, 500);
     } catch (error: unknown) {
       if (error instanceof Error) {

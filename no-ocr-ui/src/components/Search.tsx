@@ -3,6 +3,7 @@ import { Search as SearchIcon } from 'lucide-react';
 import { Case } from '../types/collection';
 import { noOcrApiUrl } from '../config/api';
 import { useAuthStore } from '../stores/authStore';
+import { useLocation } from 'react-router-dom';
 
 // Define a type for search results
 type SearchResult = {
@@ -23,6 +24,16 @@ export default function Search() {
   const [cases, setCases] = useState<Case[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalImage, setModalImage] = useState('');
+
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const caseId = params.get('name');
+    if (caseId) {
+      setSelectedCase(caseId);
+    }
+  }, [location]);
 
   useEffect(() => {
     async function fetchCases() {

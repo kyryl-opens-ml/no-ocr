@@ -52,12 +52,14 @@ export function CaseCard({ caseItem }: CaseCardProps) {
     
     setIsDeleting(true);
     try {
-      const response = await fetch(`${noOcrApiUrl}/delete_case/${caseItem.name}`, {
+      const response = await fetch(`${noOcrApiUrl}/delete_case/${caseItem.name}?user_id=${user.id}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) throw new Error('Failed to delete case');
-      // The parent component (CaseList) will remove the case upon refresh
+      
+      // Refresh the page after successful deletion
+      window.location.reload();
     } catch (error) {
       console.error('Error deleting case:', error);
       setApiMessage('Failed to delete case');

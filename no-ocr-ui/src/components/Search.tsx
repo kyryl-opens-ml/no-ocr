@@ -4,6 +4,7 @@ import { Case } from '../types/collection';
 import { noOcrApiUrl } from '../config/api';
 import { useAuthStore } from '../stores/authStore';
 import { useLocation } from 'react-router-dom';
+import { LoadingSpinner } from './shared/LoadingSpinner'; // Import the LoadingSpinner component
 
 // Define a type for search results
 type SearchResult = {
@@ -209,13 +210,13 @@ export default function Search() {
                   <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
                     <h3 className="font-semibold text-blue-800">Does it Answer:</h3>
                     <p className="mt-2 text-md text-blue-700">
-                      {answers[index] ? (answers[index].is_answer ? 'Yes' : 'No') : 'Loading...'}
+                      {answers[index] ? (answers[index].is_answer ? 'Yes' : 'No') : <LoadingSpinner />}
                     </p>
                   </div>
                   <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
                     <h3 className="font-semibold text-blue-800">Answer:</h3>
                     <p className="mt-2 text-md text-blue-700">
-                      {answers[index] ? answers[index].answer : 'Loading...'}
+                      {answers[index] ? answers[index].answer : <LoadingSpinner />}
                     </p>
                   </div>
                 </div>

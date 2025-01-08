@@ -84,7 +84,7 @@ export function CaseCard({ caseItem }: CaseCardProps) {
       <div className="p-6">
         <div className="flex items-center gap-x-3">
           <FileText className="h-6 w-6 text-blue-600" />
-          <Link to={`/search?case=${caseItem.name}`} className="text-lg font-semibold text-gray-900 hover:underline">
+          <Link to={`/search?name=${caseItem.name}`} className="text-lg font-semibold text-gray-900 hover:underline">
             {caseItem.name}
           </Link>
         </div>

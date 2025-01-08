@@ -1,5 +1,5 @@
 import { FileText, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores/authStore';
 import { noOcrApiUrl } from '../../config/api';
 
@@ -16,6 +16,29 @@ export function CaseCard({ caseItem }: CaseCardProps) {
   const { user } = useAuthStore();
   const [isDeleting, setIsDeleting] = useState(false);
   const [apiMessage, setApiMessage] = useState<string | null>(null);
+  const [status, setStatus] = useState(caseItem.status);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+
+    if (status === 'processing') {
+      interval = setInterval(async () => {
+        try {
+          const response = await fetch(`${noOcrApiUrl}/get_case/${caseItem.name}?user_id=${user.id}`);
+          const data = await response.json();
+          setStatus(data.status);
+
+          if (data.status === 'done' || data.status === 'error') {
+            clearInterval(interval);
+          }
+        } catch (error) {
+          console.error('Error fetching case status:', error);
+        }
+      }, 5000); // Poll every 5 seconds
+    }
+
+    return () => clearInterval(interval);
+  }, [status, caseItem.name, user.id]);
 
   const handleDelete = async () => {
     // If not signed in, block the actual delete action:
@@ -42,6 +65,19 @@ export function CaseCard({ caseItem }: CaseCardProps) {
     }
   };
 
+  const getStatusColor = () => {
+    switch (status) {
+      case 'done':
+        return 'text-green-600';
+      case 'processing':
+        return 'text-yellow-600';
+      case 'error':
+        return 'text-red-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
   return (
     <div className="relative group bg-white rounded-lg shadow-sm ring-1 ring-gray-200 hover:shadow-md transition-shadow">
       <div className="p-6">
@@ -51,7 +87,15 @@ export function CaseCard({ caseItem }: CaseCardProps) {
         </div>
         
         <div className="mt-4 space-y-2">
-          <p className="text-sm text-gray-600">Status: {caseItem.status}</p>
+          <p className="text-sm text-black flex items-center">
+            Status: <span className={getStatusColor()}> {status}</span> 
+            {status === 'processing' && (
+              <svg className="animate-spin ml-2 h-5 w-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+            )}
+          </p>
           <p className="text-sm text-gray-600">
             {caseItem.number_of_PDFs} PDF{caseItem.number_of_PDFs !== 1 ? 's' : ''}
           </p>

@@ -72,6 +72,15 @@ export default function CreateCase() {
     }
   };
 
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setFiles(e.dataTransfer.files);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
   return (
     <div className="max-w-2xl mx-auto mt-10 p-6">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Create New Case</h1>
@@ -100,7 +109,11 @@ export default function CreateCase() {
 
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">Upload PDFs</label>
-          <div className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+          <div
+            className="flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md"
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+          >
             <div className="space-y-1 text-center">
               <div className="flex text-sm text-gray-600">
                 <label htmlFor="pdfs" className="relative cursor-pointer rounded-md font-medium text-blue-600 hover:text-blue-500">

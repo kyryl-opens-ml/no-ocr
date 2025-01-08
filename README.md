@@ -1,21 +1,42 @@
 # No OCR
 
-## Overview 
+A simple tool for exploring documents with AI, no fancy text extraction required. Just upload your files, then quickly search or ask questions about content across multiple collections.
 
+> **Table of Contents**
+> 1. [Overview](#overview)  
+> 2. [Key Features](#key-features)  
+> 3. [Architecture](#architecture)  
+> 4. [Installation](#installation)  
+> 5. [Usage](#usage)  
+> 6. [Roadmap](#roadmap)  
+> 7. [Contributing](#contributing)  
+> 8. [Support](#support)  
+> 9. [License](#license)
 
-A streamlined React + Python solution for document-first AI. It uses embeddings (ColPali, Qwen2-VL) with Qdrant for vector search, and highlights multi-case document handling and visual question support via open source models.
+## Overview
 
-## Architecture 
+The core purpose of "No OCR" is to simplify AI-based PDF or image processing:
+- Process and store PDF pages or images without relying on OCR.  
+- Perform text and/or visual queries using modern embeddings.  
+- Use open source models for advanced question-answering on document-based diagrams, text, and more.
 
-1. The user interacts with our snazzy No OCR UI, built in React.  
-2. Their requests flow into the No OCR API, a Python backend that orchestrates everything.  
-3. Qdrant provides vector search storage to quickly find the right PDF segments (with all the heavy-lifting behind the scenes).  
-4. Meanwhile, ColPali and Qwen2-VL handle advanced inference, doing the “thinking” so you don’t have to.  
-5. Storage volumes keep data tidy and safe, ensuring easy Docker-based deployments.  
+Key technologies:
+- React-based front end (no-ocr-ui) for uploading, managing, and searching documents.  
+- Python-based API (no-ocr-api) that coordinates ingestion, indexing, and searching.  
+- Qdrant for efficient vector search and retrieval.  
+- ColPali & Qwen2-VL handle inference tasks (both text and vision-based).  
 
-And that’s how we turn PDFs (quirky diagrams, messy text, and all) into delightful, AI-driven insights!
+## Key Features
 
-## Components 
+- Create and manage PDF/document collections, also referred to as "cases".  
+- Automated ingestion to build Hugging Face-style datasets (HF_Dataset).  
+- Vector-based search over PDF pages (and relevant images) in Qdrant.  
+- Visual question-answering on images and diagrams via Qwen2-VL.  
+- Deployable via Docker for both the backend (Python) and UI (React).
+
+## Architecture
+
+Below is a high-level workflow overview:
 
 ```mermaid
 graph TD
@@ -77,89 +98,71 @@ sequenceDiagram
 ```
 
 ## Description
+This repository includes two main components:
+- no-ocr-api: A Python API for ingesting and searching PDF collections
+- no-ocr-ui: A React application for creating, managing, and visualizing PDF collections
 
-The No OCR API is a Python-based application designed to handle image processing tasks without relying on Optical Character Recognition (OCR). It provides a streamlined API for efficient image evaluation and manipulation.
+## Prerequisites
+- Python 3.x
+- Node.js 18.x
+- Docker (optional for containerized deployments)
 
 ## Installation
-
 1. Clone the repository:
    ```bash
    git clone <repository-url>
+   ```
+
+2. (API) Install dependencies:
+   ```bash
    cd no-ocr-api
-   ```
-
-2. Build the Docker image:
-   ```bash
-   docker build -t no-ocr-api .
-   ```
-
-3. Install dependencies:
-   ```bash
    pip install -r requirements.txt
    ```
 
-## Usage
-
-1. Run the API:
+3. (UI) Install dependencies:
    ```bash
-   python api.py
-   ```
-
-2. Alternatively, run the API using Docker:
-   ```bash
-   docker run -p 8000:8000 no-ocr-api
-   ```
-
-3. Access the API at `http://localhost:8000`.
-
-
-# no-ocr-ui
-
-A React-based web application for managing and searching PDF collections using AI.
-
-## Features
-
-- Create and manage PDF collections
-- AI-powered search for efficient document retrieval
-- User authentication with Supabase
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18.x
-- Docker (for production deployment)
-
-### Development
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/no-ocr-ui.git
-   cd no-ocr-ui
-   ```
-
-2. Install dependencies:
-   ```bash
+   cd ../no-ocr-ui
    npm install
    ```
 
-3. Start the development server:
+4. (Optional) Build Docker images:
+   - For the API:
+     ```bash
+     docker build -t no-ocr-api .
+     ```
+   - For the UI:
+     ```bash
+     docker build -t no-ocr-ui .
+     ```
+
+## Usage
+
+### Local Development
+1. Run the API:
+   ```bash
+   cd no-ocr-api/
+   fastapi dev api.py
+   ```
+   The API is now accessible at http://localhost:8000
+
+2. Run the UI:
    ```bash
    npm run dev
    ```
+   The UI is now accessible at http://localhost:3000
 
-### Production Deployment with Docker
-
-1. Build the Docker image:
+### Docker
+1. Run the API container:
    ```bash
-   docker build -t no-ocr-ui .
+   docker run -p 8000:8000 no-ocr-api
    ```
-
-2. Run the Docker container:
+2. Run the UI container:
    ```bash
    docker run -p 8080:80 no-ocr-ui
    ```
+3. Access the API at http://localhost:8000 and the UI at http://localhost:8080
 
-3. Access the application:
-   - Open your browser and navigate to [http://localhost:8080](http://localhost:8080)
-
+## Features
+- AI-powered PDF search for quick document retrieval
+- Simple PDF collection management
+- Optional user authentication with Supabase

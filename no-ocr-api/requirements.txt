@@ -7,3 +7,4 @@ pydantic-settings==2.6.1
 openai==1.55.3
 fastapi[standard]
 diskcache
+ipython==8.31.0

@@ -2,6 +2,14 @@
 
 A simple tool for exploring documents with AI, no fancy text extraction required. Just upload your files, then quickly search or ask questions about content across multiple collections.
 
+## Flow
+
+Here's a quick GIF demonstrating the basic flow of using No OCR:
+
+![No OCR Flow](./docs/flow.gif)
+
+
+
 > **Table of Contents**
 > 1. [Overview](#overview)  
 > 2. [Key Features](#key-features)  

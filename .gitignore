@@ -164,4 +164,7 @@ README.p.md
 colpali/
 data/
 .DS_Store
-
+no-ocr-api/storage
+example/
+no-ocr-api/vllm_cache/
+RDEV.md

@@ -2,6 +2,10 @@
 
 A simple tool for exploring documents with AI, no fancy text extraction required. Just upload your files, then quickly search or ask questions about content across multiple collections.
 
+## Release blog with details 
+
+Here is a blog with release details about this project: [URL]()
+
 ## Flow
 
 Here's a quick GIF demonstrating the basic flow of using No OCR:
@@ -23,8 +27,8 @@ Here's a quick GIF demonstrating the basic flow of using No OCR:
 
 ## Overview
 
-The core purpose of "No OCR" is to simplify AI-based PDF or image processing:
-- Process and store PDF pages or images without relying on OCR.  
+The core purpose of "No OCR" is to simplify AI-based PDF processing:
+- Process and store PDF pages without relying on OCR.  
 - Perform text and/or visual queries using modern embeddings.  
 - Use open source models for advanced question-answering on document-based diagrams, text, and more.
 
@@ -46,13 +50,7 @@ Key technologies:
 
 Below is a high-level workflow overview:
 
-```mermaid
-graph TD
-    A[User] --> B[no-ocr-ui React]
-    B --> C[no-ocr-api Python]
-    C --> D[Qdrant: Vector Stote]
-    C --> E[LLMs: ColPali, Qwen2-VL]
-```
+![Architecture](./docs/architecture.png)
 
 ## Flow
 
@@ -105,20 +103,26 @@ sequenceDiagram
     no-ocr-ui-->>User: Display search results and VLLM output
 ```
 
-## Description
-This repository includes two main components:
-- no-ocr-api: A Python API for ingesting and searching PDF collections
-- no-ocr-ui: A React application for creating, managing, and visualizing PDF collections
+## Roadmap 
+
+- Better models for reasoning and retrieval 72B and QVQ.
+- Agentic workflows - go beyond search and toward complete peace of work.
+- Training models per case - turn your workflow into data moat and train unique models.
+- UI/UX improvement - simplify, simplify, simplify.
+
 
 ## Prerequisites
 - Python 3.x
 - Node.js 18.x
 - Docker (optional for containerized deployments)
+- Superbase 
+- Modal 
 
-## Installation
+## Dev Installation
+
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/kyryl-opens-ml/no-ocr
    ```
 
 2. (API) Install dependencies:
@@ -127,50 +131,23 @@ This repository includes two main components:
    pip install -r requirements.txt
    ```
 
-3. (UI) Install dependencies:
+2. (API) Run server:
    ```bash
-   cd ../no-ocr-ui
-   npm install
-   ```
-
-4. (Optional) Build Docker images:
-   - For the API:
-     ```bash
-     docker build -t no-ocr-api .
-     ```
-   - For the UI:
-     ```bash
-     docker build -t no-ocr-ui .
-     ```
-
-## Usage
-
-### Local Development
-1. Run the API:
-   ```bash
-   cd no-ocr-api/
+   cd no-ocr-api
    fastapi dev api.py
    ```
-   The API is now accessible at http://localhost:8000
 
-2. Run the UI:
+4. (UI) Install dependencies:
    ```bash
+   cd no-ocr-ui
+   npm install
+   ```
+4. (UI) Run UI:
+   ```bash
+   cd no-ocr-ui
    npm run dev
    ```
-   The UI is now accessible at http://localhost:3000
-
-### Docker
-1. Run the API container:
+5. (Qdrant) Run qdrant
    ```bash
-   docker run -p 8000:8000 no-ocr-api
+  docker run -p 6333:6333 qdrant/qdrant:v1.12.5
    ```
-2. Run the UI container:
-   ```bash
-   docker run -p 8080:80 no-ocr-ui
-   ```
-3. Access the API at http://localhost:8000 and the UI at http://localhost:8080
-
-## Features
-- AI-powered PDF search for quick document retrieval
-- Simple PDF collection management
-- Optional user authentication with Supabase

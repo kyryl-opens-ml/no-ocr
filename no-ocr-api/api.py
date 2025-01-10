@@ -68,11 +68,11 @@ class Settings(BaseSettings):
     CASE_INFO_FILENAME: str = "case_info.json"
     HF_DATASET_DIRNAME: str = "hf_dataset"
     SEARCH_TOP_K: int = 3
-    COLPALI_TOKEN: str = "super-secret-token"
-    VLLM_URL: str = "https://truskovskiyk--qwen2-vllm-serve.modal.run/v1/"
-    COLPALI_BASE_URL: str = "https://truskovskiyk--colpali-embedding-serve.modal.run"
-    QDRANT_URI: str = "https://no-orc-qdrant.up.railway.app"
-    QDRANT_PORT: int = 443
+    COLPALI_TOKEN: str
+    VLLM_URL: str
+    COLPALI_BASE_URL: str
+    QDRANT_URI: str
+    QDRANT_PORT: int
     VECTOR_SIZE: int = 128
     INDEXING_THRESHOLD: int = 100
     QUANTILE: float = 0.99

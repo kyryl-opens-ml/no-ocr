@@ -4,26 +4,22 @@ A simple tool for exploring documents with AI, no fancy text extraction required
 
 ## Release blog with details 
 
-Here is a blog with release details about this project: [URL]()
+Here is a blog with release details about this project: [No-OCR Product](https://kyrylai.com/2025/01/10/no-ocr-product/)
 
-## Flow
+## Demo
 
 Here's a quick GIF demonstrating the basic flow of using No OCR:
 
 ![No OCR Flow](./docs/flow.gif)
 
-
-
 > **Table of Contents**
 > 1. [Overview](#overview)  
 > 2. [Key Features](#key-features)  
 > 3. [Architecture](#architecture)  
-> 4. [Installation](#installation)  
-> 5. [Usage](#usage)  
-> 6. [Roadmap](#roadmap)  
-> 7. [Contributing](#contributing)  
-> 8. [Support](#support)  
-> 9. [License](#license)
+> 4. [Flow](#flow)  
+> 5. [Roadmap](#roadmap)  
+> 6. [Prerequisites](#prerequisites)  
+> 7. [Dev Installation](#dev-installation)  
 
 ## Overview
 
@@ -54,7 +50,7 @@ Below is a high-level workflow overview:
 
 ## Flow
 
-Create caseL
+Create case:
 
 ```mermaid
 sequenceDiagram
@@ -80,7 +76,7 @@ sequenceDiagram
     no-ocr-ui (CreateCase)-->>User: Display success message
 ```
 
-Use AI Search
+Search:
 
 ```mermaid
 sequenceDiagram
@@ -116,7 +112,30 @@ sequenceDiagram
 - Node.js 18.x
 - Docker (optional for containerized deployments)
 - Superbase 
+  - Create an account at https://app.supabase.io/
+  - Create a `.env` file in the `no-ocr-ui` directory
+  - Add the following variables to the `.env` file:
+    ```
+    VITE_SUPABASE_URL=""
+    VITE_SUPABASE_ANON_KEY=""
+    VITE_REACT_APP_API_URI=""
+    ```
 - Modal 
+  - Create an account at https://modal.com/
+  - Deploy models:
+    ```bash
+    pip install modal
+    modal setup
+
+    modal run no-ocr-llms/llm_serving_load_models.py --model-name Qwen/Qwen2-VL-7B-Instruct --model-revision 51c47430f97dd7c74aa1fa6825e68a813478097f
+    modal run no-ocr-llms/llm_serving_load_models.py --model-name vidore/colqwen2-v1.0-merged --model-revision 364a4f5df97231e233e15cbbaf0b9dbe352ba92c
+
+
+    modal deploy no-ocr-llms/llm_serving.py
+    modal deploy no-ocr-llms/llm_serving_colpali.py
+    ```
+  - Create a `.env` file in the `no-ocr-api` directory
+  - Update the environment variables.
 
 ## Dev Installation
 
@@ -149,5 +168,5 @@ sequenceDiagram
    ```
 5. (Qdrant) Run qdrant
    ```bash
-  docker run -p 6333:6333 qdrant/qdrant:v1.12.5
+   docker run -p 6333:6333 qdrant/qdrant:v1.12.5
    ```

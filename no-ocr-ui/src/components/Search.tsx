@@ -20,7 +20,7 @@ export default function Search() {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [answers, setAnswers] = useState<{ [key: number]: { is_answer: boolean, answer: string } }>({});
+  const [answers, setAnswers] = useState<{ [key: number]: { answer: string } }>({});
 
   const [cases, setCases] = useState<Case[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,7 +110,7 @@ export default function Search() {
       return data;
     } catch (error) {
       console.error('Fetching answer failed:', error);
-      return { is_answer: false, answer: 'NA' };
+      return { answer: 'NA' };
     }
   };
 

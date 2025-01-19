@@ -87,7 +87,6 @@ settings = Settings()
 
 
 class ImageAnswer(BaseModel):
-    is_answer: bool
     answer: str
 
 class CaseInfo(BaseModel):
@@ -297,16 +296,19 @@ def call_vllm(image_data: PIL.Image.Image, user_query: str) -> ImageAnswer:
     model = "Qwen2-VL-7B-Instruct"
 
     prompt = f"""
-    Based on the user's query: {user_query} and the provided image, determine if the image contains enough information to answer the query.
+    Based on the user's query: 
+    ###
+    {user_query} 
+    ###
+
+    and the provided image, determine if the image contains enough information to answer the query.
     If it does, provide the most accurate answer possible based on the image.
     If it does not, respond with the exact phrase "NA".
 
     Please return your response in valid JSON with the structure:
     {{
-        "is_answer": true or false,
         "answer": "Answer text or NA"
     }}
-    If the image cannot answer the query, set "is_answer" to false and "answer" to "NA".
     """
 
     buffered = BytesIO()

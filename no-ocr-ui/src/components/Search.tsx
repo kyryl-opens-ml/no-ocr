@@ -208,12 +208,6 @@ export default function Search() {
                     </p>
                   </div>
                   <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
-                    <h3 className="font-semibold text-blue-800">Does it Answer:</h3>
-                    <p className="mt-2 text-md text-blue-700">
-                      {answers[index] ? (answers[index].is_answer ? 'Yes' : 'No') : <LoadingSpinner />}
-                    </p>
-                  </div>
-                  <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
                     <h3 className="font-semibold text-blue-800">Answer:</h3>
                     <p className="mt-2 text-md text-blue-700">
                       {answers[index] ? answers[index].answer : <LoadingSpinner />}

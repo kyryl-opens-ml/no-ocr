@@ -65,3 +65,31 @@ def test_end2end(client):
     search_results = response.json()
     assert "search_results" in search_results
     assert len(search_results["search_results"]) > 0
+
+    # Check the output schema
+    for result in search_results["search_results"]:
+        assert "score" in result
+        assert "pdf_name" in result
+        assert "pdf_page" in result
+        assert isinstance(result["score"], float)
+        assert isinstance(result["pdf_name"], str)
+        assert isinstance(result["pdf_page"], int)
+
+    # Step 4: Call the vllm endpoint with random pages from search results
+    import random
+    random_result = random.choice(search_results["search_results"])
+    pdf_name = random_result["pdf_name"]
+    pdf_page = random_result["pdf_page"]
+    print(f"Calling vllm endpoint for PDF '{pdf_name}' page {pdf_page}")
+    response = client.post("/vllm_call", data={
+        "user_query": "AI",
+        "user_id": user_id,
+        "case_name": case_name,
+        "pdf_name": pdf_name,
+        "pdf_page": pdf_page
+    })
+    print(f"Response status code for vllm_call: {response.status_code}")
+    assert response.status_code == 200
+    vllm_result = response.json()
+    assert "answer" in vllm_result
+    print(f"VLLM result: {vllm_result['answer']}")

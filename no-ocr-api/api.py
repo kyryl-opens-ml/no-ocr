@@ -391,7 +391,19 @@ def vllm_call(
     return image_answer
 
 
-@app.post("/search")
+from pydantic import BaseModel
+from typing import List
+
+class SearchResult(BaseModel):
+    score: float
+    pdf_name: str
+    pdf_page: int
+    image_base64: str
+
+class SearchResponse(BaseModel):
+    search_results: List[SearchResult]
+
+@app.post("/search", response_model=SearchResponse)
 def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: str = Form(...)):
     logger.info("start ai_search")
     start_time = time.time()
@@ -434,19 +446,17 @@ def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: 
         image_data.save(buffered, format="JPEG")
         img_b64_str = base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-        search_results_data.append(
-            {
-                "score": score,
-                "pdf_name": pdf_name,
-                "pdf_page": pdf_page,
-                "image_base64": img_b64_str,  # Add image data to the response
-            }
-        )
+        search_results_data.append(SearchResult(
+            score=score,
+            pdf_name=pdf_name,
+            pdf_page=pdf_page,
+            image_base64=img_b64_str
+        ))
     
     end_time = time.time()
     logger.info(f"done ai_search, total time {end_time - start_time}")
 
-    return {"search_results": search_results_data}
+    return SearchResponse(search_results=search_results_data)
 
 
 def process_case(case_info: CaseInfo):

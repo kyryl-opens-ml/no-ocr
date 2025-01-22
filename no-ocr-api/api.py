@@ -624,3 +624,8 @@ def delete_case(user_id: str, case_name: str):
     logger.info(f"done delete_case, total time {end_time - start_time}")
 
     return {"message": f"Case '{case_name}' has been deleted from storage and Qdrant."}
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}

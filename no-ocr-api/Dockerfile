@@ -19,4 +19,4 @@ RUN pip install -r requirements.txt
 COPY . .
 ENV PYTHONPATH /app/
 
-CMD fastapi run --host 0.0.0.0 --port 8000 --workers 1 api.py
+CMD fastapi run --host 0.0.0.0 --port 8000 --workers 1 np_ocr/api.py

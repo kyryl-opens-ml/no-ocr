@@ -1,4 +1,4 @@
-import { FileSearch, FolderPlus } from 'lucide-react';
+import { FileSearch, FolderPlus, Github } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { LogoutButton } from './auth/LogoutButton';
 import { useAuthStore } from '../stores/authStore';
@@ -43,6 +43,16 @@ export default function Navbar() {
                 <FileSearch className="w-5 h-5 mr-2" />
                 AI Search
               </Link>
+
+              <a
+                href="https://github.com/kyryl-opens-ml/no-ocr/issues"
+                className="inline-flex items-center px-3 py-2 text-sm font-medium text-gray-500 hover:text-gray-700"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Github className="w-5 h-5 mr-2" />
+                GitHub Issues
+              </a>
             </div>
           </div>
           

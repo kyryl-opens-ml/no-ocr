@@ -20,7 +20,7 @@ export default function Search() {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [answers, setAnswers] = useState<{ [key: number]: { is_answer: boolean, answer: string } }>({});
+  const [answers, setAnswers] = useState<{ [key: number]: { answer: string } }>({});
 
   const [cases, setCases] = useState<Case[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,7 +110,7 @@ export default function Search() {
       return data;
     } catch (error) {
       console.error('Fetching answer failed:', error);
-      return { is_answer: false, answer: 'NA' };
+      return { answer: 'NA' };
     }
   };
 
@@ -194,24 +194,8 @@ export default function Search() {
                 <div className="flex flex-col justify-between">
                   <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200">
                     <h3 className="font-semibold text-blue-800 text-lg">
-                      Document Name: <span className="text-blue-600">{result.pdf_name}</span>
+                      Metadata: <span className="text-blue-600">{result.pdf_name}, Page {result.pdf_page}</span>
                     </h3>
-                  </div>
-                  <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
-                    <p className="text-md text-blue-700">
-                      Page: <span className="font-semibold">{result.pdf_page}</span>
-                    </p>
-                  </div>
-                  <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
-                    <p className="text-md text-blue-700">
-                      Score: <span className="font-semibold">{result.score.toFixed(2)}</span>
-                    </p>
-                  </div>
-                  <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
-                    <h3 className="font-semibold text-blue-800">Does it Answer:</h3>
-                    <p className="mt-2 text-md text-blue-700">
-                      {answers[index] ? (answers[index].is_answer ? 'Yes' : 'No') : <LoadingSpinner />}
-                    </p>
                   </div>
                   <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200 mt-2">
                     <h3 className="font-semibold text-blue-800">Answer:</h3>

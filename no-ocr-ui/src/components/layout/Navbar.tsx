@@ -1,4 +1,4 @@
-import { FileSearch, FolderPlus, Info, Library } from 'lucide-react';
+import { FileSearch, FolderPlus, Info, Library, Github } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LogoutButton } from '../auth/LogoutButton';
 import { useAuthStore } from '../../stores/authStore';
@@ -40,6 +40,12 @@ export default function Navbar() {
                 to="/about" 
                 icon={<Info className="w-5 h-5 mr-2" />}
                 label="About"
+              />
+              <NavLink 
+                to="https://github.com/kyryl-opens-ml/no-ocr/issues" 
+                icon={<Github className="w-5 h-5 mr-2" />}
+                label="Submit Issue"
+                external
               />
             </div>
           </div>

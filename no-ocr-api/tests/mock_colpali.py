@@ -1,7 +1,7 @@
-from fastapi import FastAPI, APIRouter, HTTPException, Security, UploadFile, Depends
+import numpy as np
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Security, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer
-import numpy as np
 
 app = FastAPI(
     title="Mock ColPali Server",

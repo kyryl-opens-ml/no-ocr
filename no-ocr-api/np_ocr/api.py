@@ -100,26 +100,7 @@ class CaseInfo(BaseModel):
 search_client = SearchClient(qdrant_uri=settings.QDRANT_URI, port=settings.QDRANT_PORT, https=settings.QDRANT_HTTPS, top_k=settings.TOP_K, base_url=settings.COLPALI_BASE_URL, token=settings.COLPALI_TOKEN)
 ingest_client = IngestClient(qdrant_uri=settings.QDRANT_URI, port=settings.QDRANT_PORT, https=settings.QDRANT_HTTPS, index_threshold=settings.INDEXING_THRESHOLD, vector_size=settings.VECTOR_SIZE, quantile=settings.QUANTILE, top_k=settings.TOP_K, base_url=settings.COLPALI_BASE_URL, token=settings.COLPALI_TOKEN)
 
-cache = dc.Cache("vllm_cache")
 
-def cache_decorator(func):
-    def wrapper(*args, **kwargs):
-        user_query = kwargs.get("user_query")
-        user_id = kwargs.get("user_id")
-        case_name = kwargs.get("case_name")
-        pdf_name = kwargs.get("pdf_name")
-        pdf_page = kwargs.get("pdf_page")
-
-        cache_key = f"{user_id}_{case_name}_{pdf_name}_{pdf_page}_{user_query}"
-        if cache_key in cache:
-            return cache[cache_key]
-
-        result = func(*args, **kwargs)
-        cache[cache_key] = result
-        return result
-    return wrapper
-
-@cache_decorator
 @app.post("/vllm_call")
 def vllm_call(
     user_query: str = Form(...), user_id: str = Form(...), case_name: str = Form(...), pdf_name: str = Form(...), pdf_page: int = Form(...)

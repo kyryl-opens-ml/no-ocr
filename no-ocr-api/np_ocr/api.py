@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 
 from np_ocr.data import pdfs_to_hf_dataset
-from np_ocr.search import IngestClient, SearchClient, call_vllm
+from np_ocr.search import SearchClient, call_vllm
 
 
 class CustomRailwayLogFormatter(logging.Formatter):
@@ -60,13 +60,7 @@ class Settings(BaseSettings):
     COLPALI_TOKEN: str
     VLLM_URL: str
     COLPALI_BASE_URL: str
-    QDRANT_URI: str
-    QDRANT_PORT: int
     VECTOR_SIZE: int = 128
-    INDEXING_THRESHOLD: int = 100
-    QUANTILE: float = 0.99
-    TOP_K: int = 5
-    QDRANT_HTTPS: bool = True
     VLLM_API_KEY: str
     VLLM_MODEL: str = "Qwen2-VL-7B-Instruct"
 
@@ -77,12 +71,20 @@ class Settings(BaseSettings):
 settings = Settings()
 
 
+class SearchResult(BaseModel):
+    score: float
+    pdf_name: str
+    pdf_page: int
+    image_base64: str
+
+class SearchResponse(BaseModel):
+    search_results: List[SearchResult]
+
 class ImageAnswer(BaseModel):
     answer: str
 
 class CaseInfo(BaseModel):
     name: str
-    unique_name: str
     status: str
     number_of_PDFs: int
     files: List[str]
@@ -97,8 +99,7 @@ class CaseInfo(BaseModel):
         self.save()
 
 
-search_client = SearchClient(qdrant_uri=settings.QDRANT_URI, port=settings.QDRANT_PORT, https=settings.QDRANT_HTTPS, top_k=settings.TOP_K, base_url=settings.COLPALI_BASE_URL, token=settings.COLPALI_TOKEN)
-ingest_client = IngestClient(qdrant_uri=settings.QDRANT_URI, port=settings.QDRANT_PORT, https=settings.QDRANT_HTTPS, index_threshold=settings.INDEXING_THRESHOLD, vector_size=settings.VECTOR_SIZE, quantile=settings.QUANTILE, top_k=settings.TOP_K, base_url=settings.COLPALI_BASE_URL, token=settings.COLPALI_TOKEN)
+search_client = SearchClient(storage_dir=settings.STORAGE_DIR, vector_size=settings.VECTOR_SIZE, base_url=settings.COLPALI_BASE_URL, token=settings.COLPALI_TOKEN)
 
 
 @app.post("/vllm_call")
@@ -137,17 +138,6 @@ def vllm_call(
     return image_answer
 
 
-
-
-class SearchResult(BaseModel):
-    score: float
-    pdf_name: str
-    pdf_page: int
-    image_base64: str
-
-class SearchResponse(BaseModel):
-    search_results: List[SearchResult]
-
 @app.post("/search", response_model=SearchResponse)
 def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: str = Form(...)):
     logger.info("start ai_search")
@@ -167,8 +157,7 @@ def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: 
     with open(case_info_path, "r") as json_file:
         _ = json.load(json_file)  # case_info is not used directly below
 
-    unique_name =f"{user_id}_{case_name}"
-    search_results = search_client.search_images_by_text(user_query, case_name=unique_name, top_k=settings.SEARCH_TOP_K)
+    search_results = search_client.search_images_by_text(user_query, case_name=case_name, user_id=user_id, top_k=settings.SEARCH_TOP_K)
     if not search_results:
         return {"message": "No results found."}
 
@@ -178,13 +167,14 @@ def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: 
 
     dataset = load_from_disk(dataset_path)
     search_results_data = []
-    for result in search_results.points:
-        payload = result.payload
-        logger.info(payload)
-        score = result.score
-        image_data = dataset[payload["index"]]["image"]
-        pdf_name = dataset[payload["index"]]["pdf_name"]
-        pdf_page = dataset[payload["index"]]["pdf_page"]
+    print(search_results)
+    for point in search_results:
+        logger.info(point)
+        score = point['_distance']
+        index = point['index']
+        image_data = dataset[index]["image"]
+        pdf_name = dataset[index]["pdf_name"]
+        pdf_page = dataset[index]["pdf_page"]
 
         # Convert image to base64 string
         buffered = BytesIO()
@@ -204,13 +194,13 @@ def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: 
     return SearchResponse(search_results=search_results_data)
 
 
-def process_case(case_info: CaseInfo):
+def process_case(case_info: CaseInfo, user_id: str):
     logger.info("start post_process_case")
     start_time = time.time()
 
     dataset = pdfs_to_hf_dataset(case_info.case_dir)
     dataset.save_to_disk(case_info.case_dir /  settings.HF_DATASET_DIRNAME)
-    ingest_client.ingest(case_info.unique_name, dataset)
+    search_client.ingest(case_info.name, dataset, user_id)
 
     case_info.update_status("done")
 
@@ -247,7 +237,6 @@ def create_new_case(
 
     case_info = CaseInfo(
         name=case_name,
-        unique_name=f"{user_id}_{case_name}",
         status="processing",
         number_of_PDFs=len(files),
         files=file_names,
@@ -256,7 +245,7 @@ def create_new_case(
     case_info.save()
 
 
-    background_tasks.add_task(process_case, case_info=case_info)
+    background_tasks.add_task(process_case, case_info=case_info, user_id=user_id)
 
     end_time = time.time()
     logger.info(f"done create_new_case, total time {end_time - start_time}")
@@ -308,12 +297,6 @@ def get_cases(user_id: str):
 
 @app.get("/get_case/{case_name}")
 def get_case(user_id: str, case_name: str) -> CaseInfo:
-    logger.info("start get_case")
-    start_time = time.time()
-
-    """
-    Return the metadata of a specific case by its name for a specific user.
-    """
     case_info_path = os.path.join(settings.STORAGE_DIR, user_id, case_name, settings.CASE_INFO_FILENAME)
     if not os.path.exists(case_info_path):
         # Check common cases
@@ -323,11 +306,7 @@ def get_case(user_id: str, case_name: str) -> CaseInfo:
 
     with open(case_info_path, "r") as json_file:
         case_info = CaseInfo(**json.load(json_file))
-
-    end_time = time.time()
-    logger.info(f"done get_case, total time {end_time - start_time}")
-
-    return case_info.dict()
+    return case_info
 
 @app.delete("/delete_case/{case_name}")
 def delete_case(user_id: str, case_name: str):
@@ -343,12 +322,6 @@ def delete_case(user_id: str, case_name: str):
         shutil.rmtree(case_dir)
     else:
         raise HTTPException(status_code=404, detail="Case not found in storage.")
-
-    # Delete the case from Qdrant
-    try:
-        ingest_client.qdrant_client.delete_collection(case_name)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred while deleting the case from Qdrant: {str(e)}")
 
     end_time = time.time()
     logger.info(f"done delete_case, total time {end_time - start_time}")

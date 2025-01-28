@@ -192,7 +192,7 @@ export default function Search() {
                   />
                 </div>
                 <div className="flex flex-col justify-between">
-                  <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200">
+                  <div className="bg-blue-50 p-5 rounded-xl shadow-md border border-blue-200" style={{ maxWidth: '100%', overflowWrap: 'break-word' }}>
                     <h3 className="font-semibold text-blue-800 text-lg">
                       Metadata: <span className="text-blue-600">{result.pdf_name}, Page {result.pdf_page}</span>
                     </h3>

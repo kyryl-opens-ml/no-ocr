@@ -60,7 +60,6 @@ class Settings(BaseSettings):
     COLPALI_TOKEN: str
     VLLM_URL: str
     COLPALI_BASE_URL: str
-    LANCE_URI: str
     VECTOR_SIZE: int = 128
     VLLM_API_KEY: str
     VLLM_MODEL: str = "Qwen2-VL-7B-Instruct"
@@ -86,7 +85,6 @@ class ImageAnswer(BaseModel):
 
 class CaseInfo(BaseModel):
     name: str
-    unique_name: str
     status: str
     number_of_PDFs: int
     files: List[str]
@@ -101,7 +99,7 @@ class CaseInfo(BaseModel):
         self.save()
 
 
-search_client = SearchClient(lance_uri=settings.LANCE_URI, vector_size=settings.VECTOR_SIZE, base_url=settings.COLPALI_BASE_URL, token=settings.COLPALI_TOKEN)
+search_client = SearchClient(storage_dir=settings.STORAGE_DIR, vector_size=settings.VECTOR_SIZE, base_url=settings.COLPALI_BASE_URL, token=settings.COLPALI_TOKEN)
 
 
 @app.post("/vllm_call")
@@ -159,8 +157,7 @@ def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: 
     with open(case_info_path, "r") as json_file:
         _ = json.load(json_file)  # case_info is not used directly below
 
-    unique_name =f"{user_id}_{case_name}"
-    search_results = search_client.search_images_by_text(user_query, case_name=unique_name, top_k=settings.SEARCH_TOP_K)
+    search_results = search_client.search_images_by_text(user_query, case_name=case_name, user_id=user_id, top_k=settings.SEARCH_TOP_K)
     if not search_results:
         return {"message": "No results found."}
 
@@ -197,13 +194,13 @@ def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: 
     return SearchResponse(search_results=search_results_data)
 
 
-def process_case(case_info: CaseInfo):
+def process_case(case_info: CaseInfo, user_id: str):
     logger.info("start post_process_case")
     start_time = time.time()
 
     dataset = pdfs_to_hf_dataset(case_info.case_dir)
     dataset.save_to_disk(case_info.case_dir /  settings.HF_DATASET_DIRNAME)
-    search_client.ingest(case_info.unique_name, dataset)
+    search_client.ingest(case_info.name, dataset, user_id)
 
     case_info.update_status("done")
 
@@ -240,7 +237,6 @@ def create_new_case(
 
     case_info = CaseInfo(
         name=case_name,
-        unique_name=f"{user_id}_{case_name}",
         status="processing",
         number_of_PDFs=len(files),
         files=file_names,
@@ -249,7 +245,7 @@ def create_new_case(
     case_info.save()
 
 
-    background_tasks.add_task(process_case, case_info=case_info)
+    background_tasks.add_task(process_case, case_info=case_info, user_id=user_id)
 
     end_time = time.time()
     logger.info(f"done create_new_case, total time {end_time - start_time}")
@@ -326,12 +322,6 @@ def delete_case(user_id: str, case_name: str):
         shutil.rmtree(case_dir)
     else:
         raise HTTPException(status_code=404, detail="Case not found in storage.")
-
-    # Delete the case from Qdrant
-    try:
-        ingest_client.qdrant_client.delete_collection(case_name)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred while deleting the case from Qdrant: {str(e)}")
 
     end_time = time.time()
     logger.info(f"done delete_case, total time {end_time - start_time}")

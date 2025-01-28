@@ -65,12 +65,12 @@ class ColPaliClient:
         return response.json()
 
 class SearchClient:
-    def __init__(self, lance_uri: str, vector_size: int,  base_url: str, token: str):
-        self.lance_client = lancedb.connect(lance_uri)
+    def __init__(self, storage_dir: str, vector_size: int,  base_url: str, token: str):
+        self.storage_dir = storage_dir
         self.vector_size = vector_size
         self.colpali_client = ColPaliClient(base_url, token)
         
-    def ingest(self, case_name, dataset):
+    def ingest(self, case_name: str, dataset, user_id: str):
         logger.info("start ingest")
         start_time = time.time()
 
@@ -82,8 +82,9 @@ class SearchClient:
                 pa.field("vector", pa.list_(pa.list_(pa.float32(), self.vector_size))),
             ]
         )
+        lance_client = lancedb.connect(f"{self.storage_dir}/{user_id}/{case_name}")
+        tbl = lance_client.create_table(case_name, schema=schema)
 
-        tbl = self.lance_client.create_table(case_name, schema=schema)
         # TODO: ingest in batches
 
         with tqdm(total=len(dataset), desc="Indexing Progress") as pbar:
@@ -112,19 +113,22 @@ class SearchClient:
         end_time = time.time()
         logger.info(f"done ingest, total time {end_time - start_time}")
 
-    def search_images_by_text(self, query_text, case_name: str, top_k: int):
+    def search_images_by_text(self, query_text, case_name: str, user_id: str,top_k: int):
         logger.info("start search_images_by_text")
         start_time = time.time()
 
+        lance_client = lancedb.connect(f"{self.storage_dir}/{user_id}/{case_name}")
+        tbl = lance_client.open_table(case_name)
+
         query_embedding = self.colpali_client.query_text(query_text)
         multivector_query = np.array(query_embedding["embedding"])
-        tbl = self.lance_client.open_table(case_name)
         search_result = tbl.search(multivector_query).limit(top_k).select(["index", "pdf_name", "pdf_page"]).to_list()
 
         end_time = time.time()
         logger.info(f"done search_images_by_text, total time {end_time - start_time}")
 
         return search_result
+
 
 def call_vllm(image_data: PIL.Image.Image, user_query: str, base_url: str, api_key: str, model: str) -> ImageAnswer:
     logger.info("start call_vllm")

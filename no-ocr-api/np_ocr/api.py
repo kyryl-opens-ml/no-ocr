@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from pydantic_settings import BaseSettings
 
 from np_ocr.data import pdfs_to_hf_dataset
-from np_ocr.search import IngestClient, SearchClient, call_vllm
+from np_ocr.search import SearchClient, call_vllm
 
 
 class CustomRailwayLogFormatter(logging.Formatter):
@@ -77,6 +77,15 @@ class Settings(BaseSettings):
 settings = Settings()
 
 
+class SearchResult(BaseModel):
+    score: float
+    pdf_name: str
+    pdf_page: int
+    image_base64: str
+
+class SearchResponse(BaseModel):
+    search_results: List[SearchResult]
+
 class ImageAnswer(BaseModel):
     answer: str
 
@@ -97,8 +106,7 @@ class CaseInfo(BaseModel):
         self.save()
 
 
-search_client = SearchClient(qdrant_uri=settings.QDRANT_URI, port=settings.QDRANT_PORT, https=settings.QDRANT_HTTPS, top_k=settings.TOP_K, base_url=settings.COLPALI_BASE_URL, token=settings.COLPALI_TOKEN)
-ingest_client = IngestClient(qdrant_uri=settings.QDRANT_URI, port=settings.QDRANT_PORT, https=settings.QDRANT_HTTPS, index_threshold=settings.INDEXING_THRESHOLD, vector_size=settings.VECTOR_SIZE, quantile=settings.QUANTILE, top_k=settings.TOP_K, base_url=settings.COLPALI_BASE_URL, token=settings.COLPALI_TOKEN)
+search_client = SearchClient(lance_uri=settings.LANCE_URI, vector_size=settings.VECTOR_SIZE, base_url=settings.COLPALI_BASE_URL, token=settings.COLPALI_TOKEN)
 
 
 @app.post("/vllm_call")
@@ -136,17 +144,6 @@ def vllm_call(
 
     return image_answer
 
-
-
-
-class SearchResult(BaseModel):
-    score: float
-    pdf_name: str
-    pdf_page: int
-    image_base64: str
-
-class SearchResponse(BaseModel):
-    search_results: List[SearchResult]
 
 @app.post("/search", response_model=SearchResponse)
 def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: str = Form(...)):
@@ -210,7 +207,7 @@ def process_case(case_info: CaseInfo):
 
     dataset = pdfs_to_hf_dataset(case_info.case_dir)
     dataset.save_to_disk(case_info.case_dir /  settings.HF_DATASET_DIRNAME)
-    ingest_client.ingest(case_info.unique_name, dataset)
+    search_client.ingest(case_info.unique_name, dataset)
 
     case_info.update_status("done")
 

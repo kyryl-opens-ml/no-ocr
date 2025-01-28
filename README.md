@@ -52,8 +52,8 @@ sequenceDiagram
     participant no-ocr-ui (CreateCase)
     participant no-ocr-api
     participant HF_Dataset
-    participant IngestClient
-    participant Qdrant
+    participant SearchClient
+    participant LanceDB
 
     User->>no-ocr-ui (CreateCase): Upload PDFs & specify case name
     no-ocr-ui (CreateCase)->>no-ocr-api: POST /create_case with PDFs
@@ -61,10 +61,10 @@ sequenceDiagram
     no-ocr-api->>no-ocr-api: Spawn background task (process_case)
     no-ocr-api->>HF_Dataset: Convert PDFs to HF dataset
     HF_Dataset-->>no-ocr-api: Return dataset
-    no-ocr-api->>IngestClient: Ingest dataset
-    IngestClient->>Qdrant: Create collection & upload points
-    Qdrant-->>IngestClient: Acknowledge ingestion
-    IngestClient-->>no-ocr-api: Done ingestion
+    no-ocr-api->>SearchClient: Ingest dataset
+    SearchClient->>LanceDB: Create collection & upload points
+    LanceDB-->>SearchClient: Acknowledge ingestion
+    SearchClient-->>no-ocr-api: Done ingestion
     no-ocr-api->>no-ocr-api: Mark case status as 'done'
     no-ocr-api-->>no-ocr-ui (CreateCase): Return creation response
     no-ocr-ui (CreateCase)-->>User: Display success message
@@ -77,14 +77,14 @@ sequenceDiagram
     participant User
     participant no-ocr-ui
     participant SearchClient
-    participant Qdrant
+    participant LanceDB
     participant HF_Dataset
     participant VLLM
 
     User->>no-ocr-ui: Enter search query and select case
     no-ocr-ui->>SearchClient: Search images by text
-    SearchClient->>Qdrant: Query collection with text embedding
-    Qdrant-->>SearchClient: Return search results
+    SearchClient->>LanceDB: Query collection with text embedding
+    LanceDB-->>SearchClient: Return search results
     SearchClient-->>no-ocr-ui: Provide search results
     no-ocr-ui->>HF_Dataset: Load dataset for collection
     HF_Dataset-->>no-ocr-ui: Return dataset

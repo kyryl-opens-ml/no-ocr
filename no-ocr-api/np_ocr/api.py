@@ -60,13 +60,8 @@ class Settings(BaseSettings):
     COLPALI_TOKEN: str
     VLLM_URL: str
     COLPALI_BASE_URL: str
-    QDRANT_URI: str
-    QDRANT_PORT: int
+    LANCE_URI: str
     VECTOR_SIZE: int = 128
-    INDEXING_THRESHOLD: int = 100
-    QUANTILE: float = 0.99
-    TOP_K: int = 5
-    QDRANT_HTTPS: bool = True
     VLLM_API_KEY: str
     VLLM_MODEL: str = "Qwen2-VL-7B-Instruct"
 
@@ -175,13 +170,14 @@ def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: 
 
     dataset = load_from_disk(dataset_path)
     search_results_data = []
-    for result in search_results.points:
-        payload = result.payload
-        logger.info(payload)
-        score = result.score
-        image_data = dataset[payload["index"]]["image"]
-        pdf_name = dataset[payload["index"]]["pdf_name"]
-        pdf_page = dataset[payload["index"]]["pdf_page"]
+    print(search_results)
+    for point in search_results:
+        logger.info(point)
+        score = point['_distance']
+        index = point['index']
+        image_data = dataset[index]["image"]
+        pdf_name = dataset[index]["pdf_name"]
+        pdf_page = dataset[index]["pdf_page"]
 
         # Convert image to base64 string
         buffered = BytesIO()
@@ -305,12 +301,6 @@ def get_cases(user_id: str):
 
 @app.get("/get_case/{case_name}")
 def get_case(user_id: str, case_name: str) -> CaseInfo:
-    logger.info("start get_case")
-    start_time = time.time()
-
-    """
-    Return the metadata of a specific case by its name for a specific user.
-    """
     case_info_path = os.path.join(settings.STORAGE_DIR, user_id, case_name, settings.CASE_INFO_FILENAME)
     if not os.path.exists(case_info_path):
         # Check common cases
@@ -320,11 +310,7 @@ def get_case(user_id: str, case_name: str) -> CaseInfo:
 
     with open(case_info_path, "r") as json_file:
         case_info = CaseInfo(**json.load(json_file))
-
-    end_time = time.time()
-    logger.info(f"done get_case, total time {end_time - start_time}")
-
-    return case_info.dict()
+    return case_info
 
 @app.delete("/delete_case/{case_name}")
 def delete_case(user_id: str, case_name: str):

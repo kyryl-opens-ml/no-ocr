@@ -28,17 +28,11 @@ The core purpose of "No OCR" is to simplify AI-based PDF processing:
 - Perform text and/or visual queries using modern embeddings.  
 - Use open source models for advanced question-answering on document-based diagrams, text, and more.
 
-Key technologies:
-- React-based front end (no-ocr-ui) for uploading, managing, and searching documents.  
-- Python-based API (no-ocr-api) that coordinates ingestion, indexing, and searching.  
-- Qdrant for efficient vector search and retrieval.  
-- ColPali & Qwen2-VL handle inference tasks (both text and vision-based).  
-
 ## Key Features
 
 - Create and manage PDF/document collections, also referred to as "cases".  
 - Automated ingestion to build Hugging Face-style datasets (HF_Dataset).  
-- Vector-based search over PDF pages (and relevant images) in Qdrant.  
+- Vector-based search over PDF pages (and relevant images) in LanceDB.  
 - Visual question-answering on images and diagrams via Qwen2-VL.  
 - Deployable via Docker for both the backend (Python) and UI (React).
 
@@ -165,8 +159,4 @@ sequenceDiagram
    ```bash
    cd no-ocr-ui
    npm run dev
-   ```
-5. (Qdrant) Run qdrant
-   ```bash
-   docker run -p 6333:6333 qdrant/qdrant:v1.12.5
    ```

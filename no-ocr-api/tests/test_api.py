@@ -95,3 +95,12 @@ def test_end2end(client):
     vllm_result = response.json()
     assert "answer" in vllm_result
     print(f"VLLM result: {vllm_result['answer']}")
+
+    # Step 5: Delete the case
+    print(f"Deleting case '{case_name}' for user '{user_id}'")
+    response = client.delete(f"/delete_case/{case_name}", params={"user_id": user_id})
+    print(f"Response status code for delete_case: {response.status_code}")
+    assert response.status_code == 200
+    delete_result = response.json()
+    assert "message" in delete_result
+    print(f"Delete result: {delete_result['message']}")

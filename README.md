@@ -105,7 +105,7 @@ sequenceDiagram
 - Python 3.x
 - Node.js 18.x
 - Docker (optional for containerized deployments)
-- Superbase 
+- Supabase 
   - Create an account at https://app.supabase.io/
   - Create a `.env` file in the `no-ocr-ui` directory
   - Add the following variables to the `.env` file:

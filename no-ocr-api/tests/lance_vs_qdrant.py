@@ -1,24 +1,16 @@
-import PIL.Image
-import lancedb
-import numpy as np
-import pyarrow as pa
-import base64
 import io
 import json
 import logging
 import time
-from io import BytesIO
-from pathlib import Path
-from typing import List
 
-import PIL
-import PIL.Image
-from PIL import Image
+import lancedb
+import numpy as np
+import pyarrow as pa
 import requests
-from openai import OpenAI
-from pydantic import BaseModel
+from PIL import Image
 from qdrant_client import QdrantClient, models
 from tqdm import tqdm
+
 
 class CustomRailwayLogFormatter(logging.Formatter):
     def format(self, record):
@@ -70,7 +62,18 @@ class ColPaliClient:
 
 
 class IngestClientQdrant:
-    def __init__(self, qdrant_uri: str, port: int, https: bool, index_threshold: int, vector_size: int, quantile: float, top_k: int, base_url: str, token: str):
+    def __init__(
+        self,
+        qdrant_uri: str,
+        port: int,
+        https: bool,
+        index_threshold: int,
+        vector_size: int,
+        quantile: float,
+        top_k: int,
+        base_url: str,
+        token: str,
+    ):
         self.qdrant_client = QdrantClient(qdrant_uri, port=port, https=https)
         self.colpali_client = ColPaliClient(base_url, token)
         self.index_threshold = index_threshold
@@ -137,16 +140,22 @@ class IngestClientQdrant:
         logger.info(f"done ingest, total time {end_time - start_time}")
 
 class IngestClientLance:
-    def __init__(self, lance_uri: str, vector_size: int,  base_url: str = "http://localhost:8000", token: str = "super-secret-token"):
+    def __init__(
+        self,
+        lance_uri: str,
+        vector_size: int,
+        base_url: str = "http://localhost:8000",
+        token: str = "super-secret-token",
+    ):
         self.lance_client = lancedb.connect(lance_uri)
         self.vector_size = vector_size
         self.colpali_client = ColPaliClient(base_url, token)
-        
+
     def ingest(self, case_name, dataset):
         logger.info("start ingest")
         start_time = time.time()
 
-        
+
         schema = pa.schema(
             [
                 pa.field("index", pa.int64()),
@@ -224,7 +233,7 @@ class SearchClientQdrant:
 
 def benchmark_ingest_clients():
     # Create mock data
-    mock_data = [
+    _mock_data = [
         {
             "index": i,
             "pdf_name": f"document_{i}.pdf",
@@ -235,7 +244,7 @@ def benchmark_ingest_clients():
     ]
 
     # Initialize clients
-    qdrant_client = IngestClientQdrant(
+    _qdrant_client = IngestClientQdrant(
         qdrant_uri="http://localhost",
         port=6333,
         https=False,
@@ -247,7 +256,7 @@ def benchmark_ingest_clients():
         token="super-secret-token"
     )
 
-    lance_client = IngestClientLance(
+    _lance_client = IngestClientLance(
         lance_uri="lance-db-data/qwe123",
         vector_size=128,
         base_url="http://localhost:8000",
@@ -284,7 +293,7 @@ def benchmark_ingest_clients():
 
     # Benchmark Lance search
     start_time = time.time()
-    lance_client.search_images_by_text("example query", "test_case_lance", 10)
+    _lance_client.search_images_by_text("example query", "test_case_lance", 10)
     lance_search_duration = time.time() - start_time
     logger.info(f"Lance search time: {lance_search_duration} seconds")
 

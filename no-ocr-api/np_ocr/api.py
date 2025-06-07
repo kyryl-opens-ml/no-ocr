@@ -8,7 +8,6 @@ from io import BytesIO
 from pathlib import Path
 from typing import List
 
-import diskcache as dc
 from datasets import load_from_disk
 from fastapi import BackgroundTasks, FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -86,7 +85,7 @@ class ImageAnswer(BaseModel):
 class CaseInfo(BaseModel):
     name: str
     status: str
-    number_of_PDFs: int
+    number_of_pdfs: int
     files: List[str]
     case_dir: Path
 
@@ -99,12 +98,21 @@ class CaseInfo(BaseModel):
         self.save()
 
 
-search_client = SearchClient(storage_dir=settings.STORAGE_DIR, vector_size=settings.VECTOR_SIZE, base_url=settings.COLPALI_BASE_URL, token=settings.COLPALI_TOKEN)
+search_client = SearchClient(
+    storage_dir=settings.STORAGE_DIR,
+    vector_size=settings.VECTOR_SIZE,
+    base_url=settings.COLPALI_BASE_URL,
+    token=settings.COLPALI_TOKEN,
+)
 
 
 @app.post("/vllm_call")
 def vllm_call(
-    user_query: str = Form(...), user_id: str = Form(...), case_name: str = Form(...), pdf_name: str = Form(...), pdf_page: int = Form(...)
+    user_query: str = Form(...),
+    user_id: str = Form(...),
+    case_name: str = Form(...),
+    pdf_name: str = Form(...),
+    pdf_page: int = Form(...),
 ) -> ImageAnswer:
     logger.info("start vllm_call")
     start_time = time.time()
@@ -157,7 +165,12 @@ def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: 
     with open(case_info_path, "r") as json_file:
         _ = json.load(json_file)  # case_info is not used directly below
 
-    search_results = search_client.search_images_by_text(user_query, case_name=case_name, user_id=user_id, top_k=settings.SEARCH_TOP_K)
+    search_results = search_client.search_images_by_text(
+        user_query,
+        case_name=case_name,
+        user_id=user_id,
+        top_k=settings.SEARCH_TOP_K,
+    )
     if not search_results:
         return {"message": "No results found."}
 
@@ -170,8 +183,8 @@ def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: 
     print(search_results)
     for point in search_results:
         logger.info(point)
-        score = point['_distance']
-        index = point['index']
+        score = point["_distance"]
+        index = point["index"]
         image_data = dataset[index]["image"]
         pdf_name = dataset[index]["pdf_name"]
         pdf_page = dataset[index]["pdf_page"]
@@ -238,7 +251,7 @@ def create_new_case(
     case_info = CaseInfo(
         name=case_name,
         status="processing",
-        number_of_PDFs=len(files),
+        number_of_pdfs=len(files),
         files=file_names,
         case_dir=case_dir,
     )

@@ -1,5 +1,7 @@
 [tool.ruff]
 line-length = 120
-select = ["E", "F", "I", "N", "Q", "W"]
 exclude = ["colpali"]
 fix = true
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "Q", "W"]

@@ -7,13 +7,13 @@ from io import BytesIO
 from pathlib import Path
 from typing import List
 
+import lancedb
+import numpy as np
 import PIL
+import pyarrow as pa
 import requests
 from openai import OpenAI
 from pydantic import BaseModel
-import lancedb
-import numpy as np
-import pyarrow as pa
 from tqdm import tqdm
 
 logger = logging.getLogger()
@@ -25,7 +25,7 @@ class CaseInfo(BaseModel):
     name: str
     unique_name: str
     status: str
-    number_of_PDFs: int
+    number_of_pdfs: int
     files: List[str]
     case_dir: Path
 
@@ -69,7 +69,7 @@ class SearchClient:
         self.storage_dir = storage_dir
         self.vector_size = vector_size
         self.colpali_client = ColPaliClient(base_url, token)
-        
+
     def ingest(self, case_name: str, dataset, user_id: str):
         logger.info("start ingest")
         start_time = time.time()
@@ -137,9 +137,9 @@ def call_vllm(image_data: PIL.Image.Image, user_query: str, base_url: str, api_k
     model = "Qwen2-VL-7B-Instruct"
 
     prompt = f"""
-    Based on the user's query: 
+    Based on the user's query:
     ###
-    {user_query} 
+    {user_query}
     ###
 
     and the provided image, determine if the image contains enough information to answer the query.

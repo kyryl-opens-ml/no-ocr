@@ -78,7 +78,14 @@ def test_end2end(client):
 
     # Step 3: Call the search endpoint
     print(f"Calling search endpoint for case '{case_name}'")
-    response = client.post("/search", data={"user_query": "Margin between the SaaS and Infra companies?", "user_id": user_id, "case_name": case_name})
+    response = client.post(
+        "/search",
+        data={
+            "user_query": "Margin between the SaaS and Infra companies?",
+            "user_id": user_id,
+            "case_name": case_name,
+        },
+    )
     print(f"Response status code for search: {response.status_code}")
     assert response.status_code == 200
     search_results = response.json()

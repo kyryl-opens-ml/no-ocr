@@ -6,6 +6,8 @@ A simple tool for exploring documents with AI, no fancy text extraction required
 
 Here is a blog with release details about this project: [No-OCR Product](https://kyrylai.com/2025/01/10/no-ocr-product/)
 
+Additional background can be found on [DeepWiki](https://deepwiki.com/kyryl-opens-ml/no-ocr).
+
 ## Demo
 
 Here's a quick GIF demonstrating the basic flow of using No OCR:

@@ -162,3 +162,23 @@ sequenceDiagram
    cd no-ocr-ui
    npm run dev
    ```
+
+## Running Tests
+
+1. Install backend dependencies:
+   ```bash
+   pip install -r no-ocr-api/requirements.txt
+   ```
+2. Copy the example environment file and fill in values:
+   ```bash
+   cp no-ocr-api/.env.example no-ocr-api/.env
+   # update COLPALI_TOKEN, COLPALI_BASE_URL, VLLM_URL and VLLM_API_KEY
+   ```
+3. (Optional) start the mock ColPali server for local runs:
+   ```bash
+   uvicorn no-ocr-api/tests/mock_colpali:app --port 8000 &
+   ```
+4. Run the tests from the repository root:
+   ```bash
+   pytest
+   ```

@@ -70,7 +70,8 @@ class SearchClient:
         self.vector_size = vector_size
         self.colpali_client = ColPaliClient(base_url, token)
 
-    def ingest(self, case_name: str, dataset, user_id: str):
+    def ingest(self, case_name: str, dataset, user_id: str, batch_size: int = 50):
+        """Ingest a dataset of images into LanceDB in batches."""
         logger.info("start ingest")
         start_time = time.time()
 
@@ -85,27 +86,35 @@ class SearchClient:
         lance_client = lancedb.connect(f"{self.storage_dir}/{user_id}/{case_name}")
         tbl = lance_client.create_table(case_name, schema=schema)
 
-        # TODO: ingest in batches
-
         with tqdm(total=len(dataset), desc="Indexing Progress") as pbar:
+            batch = []
             for i in range(len(dataset)):
                 image = dataset[i]["image"]
                 response = self.colpali_client.process_pil_image(image)
                 image_embedding = response["embedding"]
 
-                data = {
-                    "index": dataset[i]["index"],
-                    "pdf_name": dataset[i]["pdf_name"],
-                    "pdf_page": dataset[i]["pdf_page"],
-                    "vector": image_embedding,
-                }
+                batch.append(
+                    {
+                        "index": dataset[i]["index"],
+                        "pdf_name": dataset[i]["pdf_name"],
+                        "pdf_page": dataset[i]["pdf_page"],
+                        "vector": image_embedding,
+                    }
+                )
 
+                if len(batch) >= batch_size:
+                    try:
+                        tbl.add(batch)
+                    except Exception as e:
+                        logger.error(f"Error during upsert: {e}")
+                    batch = []
+                pbar.update(1)
+
+            if batch:
                 try:
-                    tbl.add([data])
+                    tbl.add(batch)
                 except Exception as e:
                     logger.error(f"Error during upsert: {e}")
-                    continue
-                pbar.update(1)
 
         tbl.create_index(metric="cosine")
 

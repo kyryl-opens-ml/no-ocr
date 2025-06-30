@@ -180,7 +180,7 @@ def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: 
 
     dataset = load_from_disk(dataset_path)
     search_results_data = []
-    print(search_results)
+    logger.info(search_results)
     for point in search_results:
         logger.info(point)
         score = point["_distance"]

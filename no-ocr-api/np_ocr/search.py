@@ -152,7 +152,7 @@ def call_vllm(image_data: PIL.Image.Image, user_query: str, base_url: str, api_k
     }}
     """
 
-    print(prompt)
+    logger.info(prompt)
     buffered = BytesIO()
     max_size = (512, 512)
     image_data.thumbnail(max_size)

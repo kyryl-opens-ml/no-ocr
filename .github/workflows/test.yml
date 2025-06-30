@@ -18,6 +18,18 @@ jobs:
         run: |
           pip install -r no-ocr-api/requirements.txt
           pip install ruff pytest-cov
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: no-ocr-ui
+      - name: Run frontend lint
+        run: npm run lint
+        working-directory: no-ocr-ui
+      - name: Run frontend tests
+        run: npm test
+        working-directory: no-ocr-ui
       - name: Run linters
         run: ruff check .
       - name: Run tests

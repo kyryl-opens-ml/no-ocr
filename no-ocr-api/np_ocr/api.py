@@ -2,6 +2,7 @@ import base64
 import json
 import logging
 import os
+import re
 import shutil
 import time
 from io import BytesIO
@@ -98,6 +99,15 @@ class CaseInfo(BaseModel):
         self.save()
 
 
+_SAFE_NAME_RE = re.compile(r"^[\w\-]+$")
+
+
+def validate_identifier(value: str, field_name: str) -> None:
+    """Ensure simple alphanumeric names to avoid path traversal."""
+    if not _SAFE_NAME_RE.match(value):
+        raise HTTPException(status_code=400, detail=f"Invalid {field_name} provided.")
+
+
 search_client = SearchClient(
     storage_dir=settings.STORAGE_DIR,
     vector_size=settings.VECTOR_SIZE,
@@ -121,11 +131,21 @@ def vllm_call(
     Given a user ID, collection name, PDF name, and PDF page number, retrieve the corresponding image
     from the HF dataset and call the VLLM function with this image.
     """
+    validate_identifier(user_id, "user_id")
+    validate_identifier(case_name, "case_name")
+    validate_identifier(pdf_name, "pdf_name")
+    if pdf_page <= 0:
+        raise HTTPException(status_code=400, detail="pdf_page must be positive.")
+
     dataset_path = os.path.join(settings.STORAGE_DIR, user_id, case_name, settings.HF_DATASET_DIRNAME)
     if not os.path.exists(dataset_path):
         raise HTTPException(status_code=404, detail="Dataset for this case not found.")
 
-    dataset = load_from_disk(dataset_path)
+    try:
+        dataset = load_from_disk(dataset_path)
+    except Exception as exc:
+        logger.error("Failed loading dataset: %s", exc)
+        raise HTTPException(status_code=500, detail="Failed to load case dataset.") from exc
     image_data = None
 
     for data in dataset:
@@ -155,6 +175,9 @@ def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: 
     Given a user query, user ID, and case name, search relevant images in the Qdrant index
     and return both the results and an LLM interpretation.
     """
+    validate_identifier(user_id, "user_id")
+    validate_identifier(case_name, "case_name")
+
     if not os.path.exists(settings.STORAGE_DIR):
         raise HTTPException(status_code=404, detail="No collections found.")
 
@@ -162,8 +185,12 @@ def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: 
     if not os.path.exists(case_info_path):
         raise HTTPException(status_code=404, detail="Case info not found.")
 
-    with open(case_info_path, "r") as json_file:
-        _ = json.load(json_file)  # case_info is not used directly below
+    try:
+        with open(case_info_path, "r") as json_file:
+            _ = json.load(json_file)  # case_info is not used directly below
+    except Exception as exc:
+        logger.error("Failed to read case info: %s", exc)
+        raise HTTPException(status_code=500, detail="Failed to read case info.") from exc
 
     search_results = search_client.search_images_by_text(
         user_query,
@@ -178,9 +205,13 @@ def ai_search(user_query: str = Form(...), user_id: str = Form(...), case_name: 
     if not os.path.exists(dataset_path):
         raise HTTPException(status_code=404, detail="Dataset for this case not found.")
 
-    dataset = load_from_disk(dataset_path)
+    try:
+        dataset = load_from_disk(dataset_path)
+    except Exception as exc:
+        logger.error("Failed loading dataset: %s", exc)
+        raise HTTPException(status_code=500, detail="Failed to load case dataset.") from exc
     search_results_data = []
-    print(search_results)
+    logger.info(search_results)
     for point in search_results:
         logger.info(point)
         score = point["_distance"]
@@ -238,15 +269,21 @@ def create_new_case(
     if not files or not case_name or not user_id:
         raise HTTPException(status_code=400, detail="No files, case name, or user ID provided.")
 
+    validate_identifier(user_id, "user_id")
+    validate_identifier(case_name, "case_name")
+
     case_dir = Path(f"{settings.STORAGE_DIR}/{user_id}/{case_name}")
     case_dir.mkdir(parents=True, exist_ok=True)
 
     file_names = []
     for uploaded_file in files:
-        file_path = os.path.join(case_dir, uploaded_file.filename)
+        filename = os.path.basename(uploaded_file.filename)
+        if not filename.lower().endswith(".pdf"):
+            raise HTTPException(status_code=400, detail=f"Unsupported file type: {filename}")
+        file_path = case_dir / filename
         with open(file_path, "wb") as f:
             f.write(uploaded_file.file.read())
-        file_names.append(uploaded_file.filename)
+        file_names.append(filename)
 
     case_info = CaseInfo(
         name=case_name,
@@ -274,6 +311,8 @@ def get_cases(user_id: str):
     """
     Return a list of all previously uploaded cases for a specific user with their metadata.
     """
+    validate_identifier(user_id, "user_id")
+
     user_storage_dir = os.path.join(settings.STORAGE_DIR, user_id)
     if not os.path.exists(user_storage_dir):
         return {"message": "No cases found.", "cases": []}
@@ -284,9 +323,13 @@ def get_cases(user_id: str):
     for case in cases:
         case_info_path = os.path.join(user_storage_dir, case, settings.CASE_INFO_FILENAME)
         if os.path.exists(case_info_path):
-            with open(case_info_path, "r") as json_file:
-                case_info = CaseInfo(**json.load(json_file))
-                case_data.append(case_info.dict())
+            try:
+                with open(case_info_path, "r") as json_file:
+                    case_info = CaseInfo(**json.load(json_file))
+            except Exception as exc:
+                logger.error("Failed to read case info: %s", exc)
+                continue
+            case_data.append(case_info.dict())
 
     # Add common cases
     common_cases_dir = os.path.join(settings.STORAGE_DIR, "common_cases")
@@ -295,9 +338,13 @@ def get_cases(user_id: str):
         for case in common_cases:
             case_info_path = os.path.join(common_cases_dir, case, settings.CASE_INFO_FILENAME)
             if os.path.exists(case_info_path):
-                with open(case_info_path, "r") as json_file:
-                    case_info = CaseInfo(**json.load(json_file))
-                    case_data.append(case_info.dict())
+                try:
+                    with open(case_info_path, "r") as json_file:
+                        case_info = CaseInfo(**json.load(json_file))
+                except Exception as exc:
+                    logger.error("Failed to read case info: %s", exc)
+                    continue
+                case_data.append(case_info.dict())
 
     if not case_data:
         return {"message": "No case data found.", "cases": []}
@@ -310,6 +357,9 @@ def get_cases(user_id: str):
 
 @app.get("/get_case/{case_name}")
 def get_case(user_id: str, case_name: str) -> CaseInfo:
+    validate_identifier(user_id, "user_id")
+    validate_identifier(case_name, "case_name")
+
     case_info_path = os.path.join(settings.STORAGE_DIR, user_id, case_name, settings.CASE_INFO_FILENAME)
     if not os.path.exists(case_info_path):
         # Check common cases
@@ -317,8 +367,12 @@ def get_case(user_id: str, case_name: str) -> CaseInfo:
         if not os.path.exists(case_info_path):
             raise HTTPException(status_code=404, detail="Case info not found.")
 
-    with open(case_info_path, "r") as json_file:
-        case_info = CaseInfo(**json.load(json_file))
+    try:
+        with open(case_info_path, "r") as json_file:
+            case_info = CaseInfo(**json.load(json_file))
+    except Exception as exc:
+        logger.error("Failed to read case info: %s", exc)
+        raise HTTPException(status_code=500, detail="Failed to read case info.") from exc
     return case_info
 
 @app.delete("/delete_case/{case_name}")
@@ -330,9 +384,16 @@ def delete_case(user_id: str, case_name: str):
     Delete a specific case for a specific user.
     """
     # Delete the case from storage
+    validate_identifier(user_id, "user_id")
+    validate_identifier(case_name, "case_name")
+
     case_dir = os.path.join(settings.STORAGE_DIR, user_id, case_name)
     if os.path.exists(case_dir):
-        shutil.rmtree(case_dir)
+        try:
+            shutil.rmtree(case_dir)
+        except Exception as exc:
+            logger.error("Failed to delete case: %s", exc)
+            raise HTTPException(status_code=500, detail="Failed to delete case.") from exc
     else:
         raise HTTPException(status_code=404, detail="Case not found in storage.")
 

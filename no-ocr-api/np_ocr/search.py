@@ -134,7 +134,6 @@ def call_vllm(image_data: PIL.Image.Image, user_query: str, base_url: str, api_k
     logger.info("start call_vllm")
     start_time = time.time()
 
-    model = "Qwen2-VL-7B-Instruct"
 
     prompt = f"""
     Based on the user's query:
